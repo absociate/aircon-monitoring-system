@@ -1,11 +1,11 @@
-# 空調系統專案 .gitignore
-# 此檔案定義了不應該提交到 Git 的檔案和目錄
+# 智能自動化系統集合 .gitignore
+# 保護敏感資訊和個人配置
 
 # ================================
 # 敏感資訊和配置檔案
 # ================================
 
-# 環境變數檔案（包含 API 金鑰、密碼等）
+# 環境變數檔案
 .env
 .env.local
 .env.development
@@ -13,31 +13,47 @@
 .env.production
 .env.staging
 
-# 個人配置檔案
-config.local.js
-secrets.json
-private-config.json
+# 個人配置檔案（各系統）
+*/config.local.js
+*/secrets.json
+*/private-config.json
 
-# Home Assistant 長期存取權杖
-ha-token.txt
-access-token.txt
+# Home Assistant 配置
+*/configuration.yaml
+*/secrets.yaml
+*/known_devices.yaml
+*/.storage/
+*/home-assistant.log*
 
-# Telegram Bot Token
-telegram-config.json
-bot-token.txt
+# 長期存取權杖
+*/ha-token.txt
+*/access-token.txt
 
-# Synology Chat Webhook URLs
-synology-webhook.txt
-chat-webhook.json
+# API 金鑰和權杖
+*/telegram-config.json
+*/bot-token.txt
+*/synology-webhook.txt
+*/chat-webhook.json
+*/api-keys.json
+
+# 實際配置檔案（保留範例檔案）
+01-home-assistant-personal/*/notification-config.js
+02-home-assistant-office/*/notification-config.js
+03-lab-management-system/*/config.js
+
+# 個人化設定
+*/personal-settings.json
+*/user-preferences.json
 
 # ================================
-# Node.js 相關
+# Node.js 和 JavaScript
 # ================================
 
 # 依賴項目錄
 node_modules/
+*/node_modules/
 
-# npm 日誌檔案
+# npm 和 yarn 日誌
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -55,38 +71,14 @@ coverage/
 *.lcov
 .nyc_output
 
-# Grunt 中間儲存
-.grunt
-
-# Bower 依賴目錄
-bower_components
-
-# node-waf 配置
-.lock-wscript
-
-# 編譯的二進位檔案
-build/Release
-
 # TypeScript 快取
 *.tsbuildinfo
 
-# Optional npm cache directory
+# Optional npm cache
 .npm
 
 # Optional eslint cache
 .eslintcache
-
-# Microbundle cache
-.rpt2_cache/
-.rts2_cache_cjs/
-.rts2_cache_es/
-.rts2_cache_umd/
-
-# Optional REPL history
-.node_repl_history
-
-# Output of 'npm pack'
-*.tgz
 
 # Yarn Integrity file
 .yarn-integrity
@@ -95,24 +87,56 @@ build/Release
 .cache
 .parcel-cache
 
-# Next.js build output
-.next
+# ================================
+# Node-RED 相關
+# ================================
 
-# Nuxt.js build / generate output
-.nuxt
-dist
+# Node-RED 使用者目錄（如果包含敏感資訊）
+.node-red/
+*/flows_*.json.backup
+*/flows_cred_*.json
 
-# Gatsby files
-.cache/
-public
+# Node-RED 設定檔案（如果包含敏感資訊）
+*/settings.js.backup
 
-# Storybook build outputs
-.out
-.storybook-out
+# Node-RED 憑證
+*/certs/
+*/keys/
 
-# Temporary folders
-tmp/
-temp/
+# ================================
+# 資料庫和資料檔案
+# ================================
+
+# SQLite 資料庫
+*.db
+*.sqlite
+*.sqlite3
+
+# 資料檔案
+*/data/
+*/logs/
+*/backups/
+
+# CSV 和 Excel 檔案（如果包含敏感資料）
+*/sensitive-data.csv
+*/personal-data.xlsx
+
+# ================================
+# 實驗管理系統特定
+# ================================
+
+# 實驗資料
+03-lab-management-system/data/
+03-lab-management-system/experiments/
+03-lab-management-system/results/
+
+# 設備配置
+03-lab-management-system/equipment/config/
+03-lab-management-system/calibration/
+
+# 報告檔案
+03-lab-management-system/reports/generated/
+03-lab-management-system/exports/
 
 # ================================
 # 作業系統相關
@@ -142,12 +166,6 @@ Icon
 .TemporaryItems
 .Trashes
 .VolumeIcon.icns
-.com.apple.timemachine.donotpresent
-.AppleDB
-.AppleDesktop
-Network Trash Folder
-Temporary Items
-.apdisk
 
 # Linux
 *~
@@ -178,65 +196,38 @@ Temporary Items
 *.sublime-project
 *.sublime-workspace
 
-# Atom
-.atom/
-
 # Vim
 *.swp
 *.swo
 *~
 .netrwhist
 
-# Emacs
-*~
-\#*\#
-/.emacs.desktop
-/.emacs.desktop.lock
-*.elc
-auto-save-list
-tramp
-.\#*
-
 # ================================
-# 日誌和資料檔案
+# 日誌和暫存檔案
 # ================================
 
 # 日誌檔案
 logs/
+*/logs/
 *.log
 log.txt
 
-# 資料庫檔案
-*.db
-*.sqlite
-*.sqlite3
+# 暫存檔案
+*.tmp
+*.temp
+temp/
+tmp/
 
 # 備份檔案
 *.bak
 *.backup
 *.old
 
-# 暫存檔案
-*.tmp
-*.temp
-
-# ================================
-# Node-RED 相關
-# ================================
-
-# Node-RED 使用者目錄（如果包含敏感資訊）
-.node-red/
-flows_*.json.backup
-flows_cred_*.json
-
-# Node-RED 設定檔案（如果包含敏感資訊）
-settings.js.backup
-
 # ================================
 # 測試和開發
 # ================================
 
-# 測試覆蓋率報告
+# 測試覆蓋率
 coverage/
 .coverage
 htmlcov/
@@ -245,8 +236,10 @@ htmlcov/
 test-results/
 junit.xml
 
-# 效能測試結果
-benchmark-results/
+# 本地測試檔案
+test-local.*
+debug-*
+local-test-*
 
 # ================================
 # 部署和建置
@@ -258,14 +251,32 @@ dist/
 out/
 
 # 部署腳本（如果包含敏感資訊）
-deploy-secrets.sh
-production-deploy.bat
+deploy-secrets.*
+production-deploy.*
 
 # Docker
 .dockerignore
 
 # ================================
-# 其他
+# 個人和暫時性檔案
+# ================================
+
+# 個人筆記
+notes.txt
+todo.txt
+personal-notes.md
+
+# 暫時性實驗檔案
+experiment-*
+temp-*
+draft-*
+
+# 個人化腳本
+personal-*
+my-*
+
+# ================================
+# 特定檔案類型
 # ================================
 
 # 壓縮檔案
@@ -277,17 +288,27 @@ production-deploy.bat
 # 圖片快取
 *.cache
 
-# 本地開發用的測試檔案
-test-local.js
-debug-*.json
-local-test-*
+# 媒體檔案（如果很大）
+*.mp4
+*.avi
+*.mov
+*.wmv
 
-# 個人筆記
-notes.txt
-todo.txt
-personal-notes.md
+# ================================
+# 各系統特定忽略
+# ================================
 
-# 暫時性實驗檔案
-experiment-*
-temp-*
-draft-*
+# 家庭 Home Assistant
+01-home-assistant-personal/secrets/
+01-home-assistant-personal/ssl/
+01-home-assistant-personal/tts/
+
+# 辦公室 Home Assistant
+02-home-assistant-office/secrets/
+02-home-assistant-office/ssl/
+02-home-assistant-office/company-specific/
+
+# 實驗管理系統
+03-lab-management-system/proprietary/
+03-lab-management-system/confidential/
+03-lab-management-system/client-data/

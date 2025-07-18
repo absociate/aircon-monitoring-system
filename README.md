@@ -1,143 +1,199 @@
-# Lab 項目集合
+# 🏠🏢 智能自動化系統集合
 
-這個倉庫包含多個實用的項目和工具。
+這個倉庫包含三個主要的自動化系統，分別用於不同的環境和用途。
 
-## 🏠 空調設備通知系統
+## 📁 專案結構
 
-基於 Node-RED 的智能家居空調設備監控和通知系統，支援多種通知方式。
-
-### 監控設備
-- 加濕器 (`humidifier.rdi_640hhchu_shi_ji`)
-- 全熱交換器 (`fan.kpi_253hwquan_re_jiao_huan_qi_air_speed`)
-- 客廳冷氣 (`climate.ke_ting_leng_qi`)
-- 主臥冷氣 (`climate.zhu_wo_leng_qi`)
-- 次臥冷氣 (`climate.ci_wo_leng_qi`)
-
-### 通知方式
-- NotifyHelper (Home Assistant 內建)
-- Synology Chat (群暉聊天室)
-- Telegram Bot
-
-### 快速開始
-1. 執行安裝腳本：`install-aircon-notifications.bat` (Windows) 或 `install-aircon-notifications.sh` (Linux/Mac)
-2. 編輯 `.env` 文件配置您的服務
-3. 在 Node-RED 中導入 `aircon-notification-flow.json`
-4. 執行測試：`node test-notifications.js`
-
-詳細說明請參考：[README-aircon-notifications.md](README-aircon-notifications.md)
+```
+Lab/
+├── 01-home-assistant-personal/     # 🏠 家裡的 Home Assistant
+├── 02-home-assistant-office/      # 🏢 公司的 Home Assistant  
+├── 03-lab-management-system/      # 🔬 公司的實驗管理系統
+├── shared-tools/                 # 🛠️ 共用工具
+└── archive/                      # 📦 歸檔檔案
+```
 
 ---
 
-## 🎨 3D字母展开图生成器
+## 🏠 01-home-assistant-personal
 
-这是一个专业的3D字母展开图生成工具，基于真实的纸工艺设计原理，可以生成可直接制作的立体英文字母。
+**家裡的 Home Assistant 系統**
 
-## 🆕 专业版特点
+### 🌡️ aircon-system - 空調三系統
+- 監控 5 個空調設備（加濕器、全熱交換器、3台冷氣）
+- 多重通知系統（NotifyHelper、Synology Chat、Telegram）
+- 智能溫度和模式控制
 
-- 🎨 **完整支持26个英文字母**（A-Z全部可用）
-- 📐 **专业展开图设计** - 基于真实纸工艺原理
-- 🔧 **精确的折叠和粘贴指导** - 实线裁剪，虚线折叠
-- 📏 **可调节参数** - 字母大小（150px-400px）和厚度（15px-60px）
-- 🖨️ **打印优化** - 适配A4/A3纸张
-- 📋 **详细制作说明** - 从打印到完成的全流程指导
-- 🎯 **胶水标签系统** - 明确标示粘贴位置
+### 🔋 battery-management - 電池管理
+- ENELOOP 電池充電管理
+- 安全時間控制和監控
+- 充電狀態通知
 
-## 文件说明
+### 🔔 notifications - 通知系統
+- NotifyHelper 配置
+- 多平台通知整合
+- 自定義通知規則
 
-- `professional-3d-generator.html` - **专业版生成器**（推荐使用）
-- `example-letter-E.html` - 字母E的完整示例展开图
-- `3d-alphabet-generator.html` - 基础版生成器
-- `letter-templates.js` - 字母模板数据文件
-- `README.md` - 使用说明文档
+---
 
-## 使用方法
+## 🏢 02-home-assistant-office
 
-### 专业版使用（推荐）
+**公司的 Home Assistant 系統**
 
-1. **打开工具**：在浏览器中打开 `professional-3d-generator.html`
-2. **选择字母**：点击您想要制作的字母按钮（支持A-Z全部字母）
-3. **调整参数**：使用滑块调整字母大小和厚度
-4. **生成展开图**：点击"生成专业展开图"按钮
-5. **打印**：点击"打印展开图"按钮打印到A4纸上
+### 🏢 office-automation - 辦公室自動化
+- 會議室環境控制
+- 照明和空調自動化
+- 工作時間排程
 
-### 快速体验
+### 📊 meeting-room-control - 會議室控制
+- 會議室預約系統
+- 環境自動調節
+- 使用狀態監控
 
-- 打开 `example-letter-E.html` 查看字母E的完整示例
-- 可直接打印制作，体验完整流程
+---
 
-## 制作步骤
+## 🔬 03-lab-management-system
 
-### 材料准备
-- A4打印纸（建议使用较厚的卡纸）
-- 剪刀或美工刀
-- 胶水或双面胶
-- 尺子（可选，用于折叠）
+**公司的實驗管理系統**
 
-### 制作过程
+### 🔬 equipment-monitoring - 設備監控
+- 實驗設備狀態監控
+- 溫度、濕度、壓力感測
+- 異常警報系統
 
-1. **打印展开图**
-   - 使用A4纸打印生成的展开图
-   - 确保打印比例为100%（不要缩放）
+### 📈 data-collection - 資料收集
+- 實驗資料自動收集
+- 資料庫整合
+- 即時資料分析
 
-2. **裁剪**
-   - 沿着**实线**裁剪字母的轮廓
-   - 保留所有的胶水标签（黄色部分）
+### 📋 reporting - 報告系統
+- 自動報告生成
+- 資料視覺化
+- 定期報告發送
 
-3. **折叠**
-   - 沿着**虚线**向内折叠
-   - 使用尺子压出清晰的折痕
+---
 
-4. **粘贴**
-   - 在标有"胶水"的黄色标签上涂抹胶水
-   - 按照编号顺序将侧面条带粘贴到正面和背面
-   - 确保边缘对齐
+## 🛠️ shared-tools
 
-5. **完成**
-   - 等待胶水完全干燥
-   - 检查所有接缝是否牢固
-   - 您的3D字母就完成了！
+**跨專案共用工具**
 
-## 文件说明
+### 🔄 sync-scripts - 同步腳本
+- GitHub 同步工具
+- 多環境部署腳本
+- 配置管理工具
 
-- `3d-alphabet-generator.html` - 主要的网页工具
-- `letter-templates.js` - 字母模板数据文件
-- `README.md` - 使用说明文档
+### 📝 templates - 範本檔案
+- Node-RED 流程範本
+- 配置檔案範本
+- 文檔範本
 
-## 技术特点
+### ⚙️ utilities - 實用工具
+- 通用函數庫
+- 資料處理工具
+- 測試工具
 
-- 使用SVG技术生成精确的展开图
-- 响应式设计，支持不同屏幕尺寸
-- 打印优化，确保最佳打印效果
-- 模块化设计，易于扩展新字母
+---
 
-## 小贴士
+## 🚀 快速開始
 
-- 🎯 **选择合适的纸张**：较厚的卡纸（160-200g）效果最佳
-- 📐 **精确折叠**：使用尺子压出清晰的折痕
-- 🔧 **胶水用量**：少量多次，避免胶水溢出
-- ⏰ **耐心等待**：让胶水充分干燥再进行下一步
-- 🎨 **个性化**：可以在制作前给字母涂色
+### 🏠 家裡環境設定
+```bash
+cd 01-home-assistant-personal/aircon-system
+# 參考 README-aircon-notifications.md
+```
 
-## 故障排除
+### 🏢 公司環境設定
+```bash
+cd 02-home-assistant-office
+# 參考各子目錄的 README.md
+```
 
-**Q: 打印出来的尺寸不对？**
-A: 确保打印设置中选择"实际大小"或"100%"，不要选择"适合页面"。
+### 🔬 實驗室系統設定
+```bash
+cd 03-lab-management-system
+# 參考各子目錄的 README.md
+```
 
-**Q: 折叠线看不清楚？**
-A: 虚线可能在某些打印机上不够明显，可以用铅笔轻轻描一下。
+---
 
-**Q: 粘贴时对不齐？**
-A: 先不要涂胶水，干燥状态下试拼装，确认位置后再粘贴。
+## 🔄 同步和部署
 
-**Q: 字母不够立体？**
-A: 检查所有折叠线是否都已正确折叠，增加厚度参数可以让字母更立体。
+### 使用同步腳本
+```bash
+# Windows
+shared-tools\sync-scripts\sync-aircon-system.bat
 
-## 扩展想法
+# Linux/Mac
+shared-tools/sync-scripts/sync-aircon-system.sh
+```
 
-- 制作整个单词或句子
-- 使用不同颜色的纸张
-- 添加LED灯带制作发光字母
-- 制作数字和符号
-- 创建字母收纳盒
+### 環境間同步
+- **家裡 → GitHub**：推送更新
+- **GitHub → 公司**：拉取更新
+- **配置隔離**：各環境獨立配置
 
-享受您的3D字母制作过程！🎉
+---
+
+## 🛡️ 安全和隱私
+
+### 敏感資訊保護
+- ✅ `.gitignore` 保護配置檔案
+- ✅ 環境變數分離
+- ✅ 範例檔案提供參考
+
+### 權限管理
+- 🔒 Private 倉庫
+- 🔑 個人存取權杖
+- 🏠 家庭網路隔離
+
+---
+
+## 📞 支援和文檔
+
+### 各系統詳細文檔
+- 📖 每個子目錄都有詳細的 README.md
+- 🚀 快速開始指南
+- 🔧 故障排除指南
+
+### 聯繫方式
+- 📧 透過 GitHub Issues 回報問題
+- 💬 使用 Discussions 討論功能
+- 📝 查看 Wiki 獲取更多資訊
+
+---
+
+## 🎯 專案管理建議
+
+### 使用 Augment NEW CHAT 分類
+- **🏠 家庭自動化**：處理家裡 HA 相關問題
+- **🏢 辦公室系統**：處理公司 HA 和辦公自動化
+- **🔬 實驗管理**：處理實驗室設備和資料系統
+- **🛠️ 工具開發**：處理共用工具和腳本開發
+
+### 版本控制策略
+- `main` 分支：穩定版本
+- `dev` 分支：開發版本
+- `feature/*` 分支：新功能開發
+- `hotfix/*` 分支：緊急修復
+
+---
+
+## 📊 專案狀態
+
+| 系統 | 狀態 | 最後更新 | 版本 |
+|------|------|----------|------|
+| 🏠 家庭 HA | ✅ 運行中 | 2024-01 | v2.1 |
+| 🏢 辦公 HA | 🚧 開發中 | 2024-01 | v1.0 |
+| 🔬 實驗管理 | 📋 規劃中 | 2024-01 | v0.1 |
+
+---
+
+## 🎉 貢獻指南
+
+1. **Fork** 此倉庫
+2. **建立** 功能分支
+3. **提交** 變更
+4. **推送** 到分支
+5. **建立** Pull Request
+
+感謝您的貢獻！🙏
