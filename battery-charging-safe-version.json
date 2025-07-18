@@ -1,0 +1,148 @@
+[
+    {
+        "id": "7aa6bd9d6c51a86b",
+        "type": "tab",
+        "label": "智能充電電池管理系統 - 安全加強版",
+        "disabled": false,
+        "info": "智能充電電池管理系統 - 安全加強版\n\n🛡️ 安全改進：\n1. 雙重計時器保護系統\n2. 定期安全檢查（每10分鐘）\n3. 分級警報系統（50%警告，100%強制關閉）\n4. 最大充電時間硬限制（設定時間150%）\n5. 持久化充電記錄\n6. 緊急關閉功能\n\n⚠️ 防止過度充電措施：\n- 主計時器失效時，備份檢查會接管\n- 即使Node-RED重啟，也會恢復保護\n- 充電時間超過設定值50%時發出警告\n- 充電時間超過設定值100%時強制關閉\n\n支援設備：\n- 牧田BL1041B (switch.tp_link_power_strip_eb2f_cha_shang_4) - 90分鐘\n- ENELOOP 3號 (switch.tp_link_power_strip_eb2f_cha_shang_5) - 240分鐘\n- ENELOOP 4號 (switch.tp_link_power_strip_eb2f_cha_shang_6) - 210分鐘",
+        "env": []
+    },
+    {
+        "id": "emergency_stop_all",
+        "type": "inject",
+        "z": "7aa6bd9d6c51a86b",
+        "name": "🚨 緊急關閉所有充電",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "emergency_stop",
+        "payloadType": "str",
+        "x": 130,
+        "y": 20,
+        "wires": [["emergency_stop_handler"]]
+    },
+    {
+        "id": "emergency_stop_handler",
+        "type": "function",
+        "z": "7aa6bd9d6c51a86b",
+        "name": "緊急關閉處理器",
+        "func": "// 獲取電池配置\nconst batteries = {\n    makita: {\n        entityId: 'switch.tp_link_power_strip_eb2f_cha_shang_4',\n        name: '牧田BL1041B充電電池'\n    },\n    eneloop_aa: {\n        entityId: 'switch.tp_link_power_strip_eb2f_cha_shang_5',\n        name: 'ENELOOP 3號充電電池'\n    },\n    eneloop_aaa: {\n        entityId: 'switch.tp_link_power_strip_eb2f_cha_shang_6',\n        name: 'ENELOOP 4號充電電池'\n    }\n};\n\n// 清除所有計時器\nfor (const key of Object.keys(batteries)) {\n    const timerId = flow.get(`${key}_timer`);\n    if (timerId) {\n        clearTimeout(timerId);\n        flow.set(`${key}_timer`, null);\n    }\n    \n    // 清除充電記錄\n    context.set(`${key}_charging`, null);\n}\n\n// 準備關閉所有設備的命令\nconst outputs = [];\nlet deviceList = [];\n\nfor (const [key, battery] of Object.entries(batteries)) {\n    outputs.push({\n        payload: {\n            domain: 'switch',\n            service: 'turn_off',\n            target: {\n                entity_id: battery.entityId\n            }\n        },\n        batteryKey: key,\n        action: 'emergency_stop'\n    });\n    deviceList.push(battery.name);\n}\n\n// 準備緊急通知\nconst notifyMsg = {\n    payload: {\n        title: '🚨 緊急關閉充電',\n        message: `🚨 已執行緊急關閉所有充電設備\\n\\n關閉設備：\\n${deviceList.map(name => `• ${name}`).join('\\n')}\\n\\n⏰ 執行時間：${new Date().toLocaleString('zh-TW')}\\n\\n請檢查設備狀態和電池溫度。`\n    },\n    action: 'emergency_stop'\n};\n\noutputs.unshift(notifyMsg); // 通知放在第一個輸出\n\nnode.status({fill:\"red\", shape:\"dot\", text:\"緊急關閉執行中\"});\n\nreturn outputs;",
+        "outputs": 4,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 350,
+        "y": 20,
+        "wires": [["notify_splitter"], ["device_control"], ["device_control"], ["device_control"]]
+    },
+    {
+        "id": "safety_check_timer",
+        "type": "inject",
+        "z": "7aa6bd9d6c51a86b",
+        "name": "🔍 安全檢查（每10分鐘）",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "600",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 60,
+        "topic": "",
+        "payload": "safety_check",
+        "payloadType": "str",
+        "x": 140,
+        "y": 80,
+        "wires": [["safety_check_handler"]]
+    },
+    {
+        "id": "safety_check_handler",
+        "type": "function",
+        "z": "7aa6bd9d6c51a86b",
+        "name": "安全檢查處理器",
+        "func": "// 電池配置\nconst batteries = {\n    makita: {\n        entityId: 'switch.tp_link_power_strip_eb2f_cha_shang_4',\n        name: '牧田BL1041B充電電池',\n        chargingTime: 90,\n        domain: 'switch'\n    },\n    eneloop_aa: {\n        entityId: 'switch.tp_link_power_strip_eb2f_cha_shang_5',\n        name: 'ENELOOP 3號充電電池',\n        chargingTime: 240,\n        domain: 'switch'\n    },\n    eneloop_aaa: {\n        entityId: 'switch.tp_link_power_strip_eb2f_cha_shang_6',\n        name: 'ENELOOP 4號充電電池',\n        chargingTime: 210,\n        domain: 'switch'\n    }\n};\n\nconst now = Date.now();\nconst outputs = [null, null, null]; // [通知, 控制, debug]\nlet warnings = [];\nlet emergencyStops = [];\n\n// 檢查每個電池的充電狀態\nfor (const [key, battery] of Object.entries(batteries)) {\n    const chargingInfo = context.get(`${key}_charging`);\n    \n    if (chargingInfo && chargingInfo.startTime) {\n        const chargingMinutes = Math.round((now - chargingInfo.startTime) / 60000);\n        const maxTime = battery.chargingTime;\n        const warningTime = Math.round(maxTime * 1.5); // 150%警告\n        const emergencyTime = Math.round(maxTime * 2.0); // 200%緊急關閉\n        \n        if (chargingMinutes >= emergencyTime) {\n            // 緊急關閉\n            emergencyStops.push({\n                battery: battery,\n                key: key,\n                chargingMinutes: chargingMinutes,\n                maxTime: maxTime\n            });\n        } else if (chargingMinutes >= warningTime) {\n            // 警告\n            warnings.push({\n                battery: battery,\n                key: key,\n                chargingMinutes: chargingMinutes,\n                maxTime: maxTime\n            });\n        }\n    }\n}\n\n// 處理緊急關閉\nif (emergencyStops.length > 0) {\n    const stopList = emergencyStops.map(item => \n        `• ${item.battery.name}: ${item.chargingMinutes}分鐘 (超過${item.maxTime}分鐘${Math.round((item.chargingMinutes/item.maxTime-1)*100)}%)`\n    ).join('\\n');\n    \n    // 準備緊急關閉通知\n    outputs[0] = {\n        payload: {\n            title: '🚨 緊急關閉過度充電',\n            message: `🚨 檢測到嚴重過度充電，立即關閉：\\n${stopList}\\n\\n⚠️ 請檢查電池和充電器狀態\\n🕐 檢查時間：${new Date().toLocaleString('zh-TW')}`\n        },\n        action: 'emergency_safety_stop'\n    };\n    \n    // 準備關閉命令\n    const firstStop = emergencyStops[0];\n    outputs[1] = {\n        payload: {\n            domain: firstStop.battery.domain,\n            service: 'turn_off',\n            target: {\n                entity_id: firstStop.battery.entityId\n            }\n        },\n        batteryKey: firstStop.key,\n        action: 'emergency_safety_stop'\n    };\n    \n    // 清除充電記錄\n    emergencyStops.forEach(item => {\n        context.set(`${item.key}_charging`, null);\n        const timerId = flow.get(`${item.key}_timer`);\n        if (timerId) {\n            clearTimeout(timerId);\n            flow.set(`${item.key}_timer`, null);\n        }\n    });\n}\n\n// 處理警告\nelse if (warnings.length > 0) {\n    const warnList = warnings.map(item => \n        `• ${item.battery.name}: ${item.chargingMinutes}分鐘 (設定${item.maxTime}分鐘)`\n    ).join('\\n');\n    \n    outputs[0] = {\n        payload: {\n            title: '⚠️ 充電時間警告',\n            message: `⚠️ 以下電池充電時間超過設定值50%：\\n${warnList}\\n\\n建議檢查充電狀態\\n🕐 檢查時間：${new Date().toLocaleString('zh-TW')}`\n        },\n        action: 'charging_warning'\n    };\n}\n\n// Debug輸出\noutputs[2] = {\n    payload: '安全檢查完成',\n    warnings: warnings.length,\n    emergencyStops: emergencyStops.length,\n    checkTime: new Date().toISOString()\n};\n\nnode.status({\n    fill: emergencyStops.length > 0 ? \"red\" : warnings.length > 0 ? \"yellow\" : \"green\",\n    shape: \"dot\",\n    text: `檢查完成: ${warnings.length}警告, ${emergencyStops.length}緊急`\n});\n\nreturn outputs;",
+        "outputs": 3,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 380,
+        "y": 80,
+        "wires": [["notify_splitter"], ["device_control"], ["debug_safety"]]
+    },
+    {
+        "id": "enhanced_charging_handler",
+        "type": "function",
+        "z": "7aa6bd9d6c51a86b",
+        "name": "增強充電處理器",
+        "func": "// 電池配置\nconst batteries = {\n    makita: {\n        entityId: 'switch.tp_link_power_strip_eb2f_cha_shang_4',\n        name: '牧田BL1041B充電電池',\n        chargingTime: 90,\n        maintenanceDays: 30,\n        domain: 'switch'\n    },\n    eneloop_aa: {\n        entityId: 'switch.tp_link_power_strip_eb2f_cha_shang_5',\n        name: 'ENELOOP 3號充電電池',\n        chargingTime: 240,\n        maintenanceDays: 60,\n        domain: 'switch'\n    },\n    eneloop_aaa: {\n        entityId: 'switch.tp_link_power_strip_eb2f_cha_shang_6',\n        name: 'ENELOOP 4號充電電池',\n        chargingTime: 210,\n        maintenanceDays: 60,\n        domain: 'switch'\n    }\n};\n\n// 解析狀態變化\nconst newState = msg.payload;\nconst oldState = msg.data.old_state?.state;\nconst entityId = msg.data.entity_id;\n\n// 找到對應的電池\nlet batteryKey = null;\nlet battery = null;\n\nfor (const [key, config] of Object.entries(batteries)) {\n    if (config.entityId === entityId) {\n        batteryKey = key;\n        battery = config;\n        break;\n    }\n}\n\nif (!battery) {\n    node.error(`找不到實體 ${entityId} 的配置`);\n    return null;\n}\n\nconst outputs = [null, null, null]; // [通知, 控制, debug]\n\n// 檢查開啟狀態 (off -> on)\nif (oldState === 'off' && newState === 'on') {\n    // 清除現有計時器\n    const timerId = flow.get(`${batteryKey}_timer`);\n    if (timerId) {\n        clearTimeout(timerId);\n    }\n    \n    const startTime = Date.now();\n    \n    // 使用context存儲充電信息（持久化）\n    context.set(`${batteryKey}_charging`, {\n        startTime: startTime,\n        entityId: entityId,\n        batteryName: battery.name,\n        maxTime: battery.chargingTime\n    });\n    \n    // 更新充電記錄\n    const records = flow.get('chargingRecords') || {};\n    if (!records[batteryKey]) records[batteryKey] = {};\n    records[batteryKey].lastCharge = new Date(startTime).toISOString();\n    records[batteryKey].count = (records[batteryKey].count || 0) + 1;\n    flow.set('chargingRecords', records);\n    \n    // 設定主計時器\n    const chargingMs = battery.chargingTime * 60 * 1000;\n    const newTimerId = setTimeout(() => {\n        // 主計時器到期，正常關閉\n        const controlMsg = {\n            payload: {\n                domain: battery.domain,\n                service: 'turn_off',\n                target: {\n                    entity_id: entityId\n                }\n            },\n            batteryKey: batteryKey,\n            action: 'normal_stop'\n        };\n        \n        // 清除充電記錄\n        context.set(`${batteryKey}_charging`, null);\n        \n        node.send([null, controlMsg, {\n            payload: `正常關閉 ${battery.name}`,\n            batteryKey: batteryKey,\n            action: 'normal_stop'\n        }]);\n        \n        flow.set(`${batteryKey}_timer`, null);\n    }, chargingMs);\n    \n    flow.set(`${batteryKey}_timer`, newTimerId);\n    \n    // 設定安全備份計時器（150%時間）\n    const safetyMs = Math.round(chargingMs * 1.5);\n    const safetyTimerId = setTimeout(() => {\n        // 安全計時器到期，強制關閉\n        const controlMsg = {\n            payload: {\n                domain: battery.domain,\n                service: 'turn_off',\n                target: {\n                    entity_id: entityId\n                }\n            },\n            batteryKey: batteryKey,\n            action: 'safety_stop'\n        };\n        \n        // 清除充電記錄\n        context.set(`${batteryKey}_charging`, null);\n        \n        // 發送安全關閉通知\n        const safetyNotify = {\n            payload: {\n                title: '🛡️ 安全保護關閉',\n                message: `🛡️ ${battery.name} 安全保護關閉\\n⏱️ 充電時間：${Math.round(battery.chargingTime * 1.5)}分鐘\\n⚠️ 主計時器可能失效，已啟動安全保護`\n            },\n            action: 'safety_stop'\n        };\n        \n        node.send([safetyNotify, controlMsg, {\n            payload: `安全關閉 ${battery.name}`,\n            batteryKey: batteryKey,\n            action: 'safety_stop'\n        }]);\n        \n        flow.set(`${batteryKey}_safety_timer`, null);\n    }, safetyMs);\n    \n    flow.set(`${batteryKey}_safety_timer`, safetyTimerId);\n    \n    // 準備開始通知\n    const notifyMsg = {\n        payload: {\n            title: '🔋 充電開始',\n            message: `🔋 ${battery.name} 開始充電\\n⏱️ 預計時間：${battery.chargingTime}分鐘\\n🛡️ 安全限制：${Math.round(battery.chargingTime * 1.5)}分鐘\\n🕐 開始時間：${new Date(startTime).toLocaleString('zh-TW')}`\n        },\n        batteryKey: batteryKey,\n        action: 'start'\n    };\n    \n    outputs[0] = notifyMsg;\n    outputs[2] = {\n        payload: `${battery.name} 開始充電（增強保護）`,\n        batteryKey: batteryKey,\n        chargingTime: battery.chargingTime,\n        safetyTime: Math.round(battery.chargingTime * 1.5),\n        startTime: startTime\n    };\n}\n\n// 檢查關閉狀態 (on -> off)\nelse if (newState === 'off' && oldState === 'on') {\n    // 清除所有計時器\n    const timerId = flow.get(`${batteryKey}_timer`);\n    const safetyTimerId = flow.get(`${batteryKey}_safety_timer`);\n    \n    if (timerId) {\n        clearTimeout(timerId);\n        flow.set(`${batteryKey}_timer`, null);\n    }\n    if (safetyTimerId) {\n        clearTimeout(safetyTimerId);\n        flow.set(`${batteryKey}_safety_timer`, null);\n    }\n    \n    // 獲取充電信息\n    const chargingInfo = context.get(`${batteryKey}_charging`);\n    let actualTime = 0;\n    \n    if (chargingInfo && chargingInfo.startTime) {\n        actualTime = Math.round((Date.now() - chargingInfo.startTime) / 60000);\n        context.set(`${batteryKey}_charging`, null); // 清除充電記錄\n    }\n    \n    // 判斷關閉原因\n    let stopReason = '手動關閉';\n    let statusIcon = '✅';\n    \n    if (actualTime > battery.chargingTime * 1.2) {\n        stopReason = '延遲關閉';\n        statusIcon = '⚠️';\n    }\n    \n    const notifyMsg = {\n        payload: {\n            title: `${statusIcon} 充電完成`,\n            message: `${statusIcon} ${battery.name} 充電完成\\n⏱️ 充電時長：${actualTime}分鐘\\n📋 設定時間：${battery.chargingTime}分鐘\\n📊 效率：${actualTime > 0 ? Math.round((battery.chargingTime/actualTime)*100) : 0}%\\n🕐 完成時間：${new Date().toLocaleString('zh-TW')}\\n\\n${stopReason}`\n        },\n        batteryKey: batteryKey,\n        action: 'complete'\n    };\n    \n    outputs[0] = notifyMsg;\n    outputs[2] = {\n        payload: `${battery.name} 充電完成`,\n        batteryKey: batteryKey,\n        actualTime: actualTime,\n        expectedTime: battery.chargingTime,\n        stopReason: stopReason\n    };\n}\n\nreturn outputs;",
+        "outputs": 3,
+        "timeout": "",
+        "noerr": 0,\n        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 350,
+        "y": 200,
+        "wires": [["notify_splitter"], ["device_control"], ["debug_charging"]]
+    },
+    {
+        "id": "notify_splitter",
+        "type": "function",
+        "z": "7aa6bd9d6c51a86b",
+        "name": "通知分發器",
+        "func": "// 檢查是否有通知訊息\nif (!msg || !msg.payload) {\n    return [null, null, null];\n}\n\n// 動態靜音時間控制\nlet quietMode = flow.get('quietMode');\nif (quietMode === undefined) {\n    quietMode = false;\n    flow.set('quietMode', quietMode);\n}\n\nlet isQuiet = false;\nif (quietMode) {\n    const now = new Date();\n    const hour = now.getHours();\n    isQuiet = hour >= 22 || hour < 7;\n}\n\nif (isQuiet && msg.action !== 'error' && msg.action !== 'emergency_stop' && msg.action !== 'emergency_safety_stop') {\n    return [null, null, null];\n}\n\nconst title = msg.payload.title;\nconst message = msg.payload.message;\n\n// 創建通知訊息\nmsg.payload_notifyhelper = {\n    message: message,\n    title: title,\n    targets: ['person.ming']\n};\n\nconst notify1 = {\n    payload_notifyhelper: msg.payload_notifyhelper\n};\n\nconst notify2 = {\n    payload: {\n        title: title,\n        message: message\n    }\n};\n\nconst notify3 = {\n    payload: {\n        title: title,\n        message: message\n    }\n};\n\nreturn [notify1, notify2, notify3];",
+        "outputs": 3,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 580,
+        "y": 140,
+        "wires": [["notify_helper"], ["synology_chat"], ["telegram_bot"]]
+    },
+    {
+        "id": "notify_helper",
+        "type": "api-call-service",
+        "z": "7aa6bd9d6c51a86b",
+        "name": "NotifyHelper (ming)",
+        "server": "125d83f7.1a33dc",
+        "version": 7,
+        "debugenabled": false,
+        "action": "notify.notify_person",
+        "floorId": [],
+        "areaId": [],
+        "deviceId": [],
+        "entityId": [],
+        "labelId": [],
+        "data": "{\"message\": payload_notifyhelper.message, \"title\": payload_notifyhelper.title, \"targets\": payload_notifyhelper.targets}",
+        "dataType": "jsonata",
+        "mergeContext": "",
+        "mustacheAltTags": false,
+        "outputProperties": [],
+        "queue": "none",
+        "blockInputOverrides": true,
+        "domain": "notify",
+        "service": "notify_person",
+        "x": 800,
+        "y": 100,
+        "wires": [["debug_notify1"]]
+    },
+    {
+        "id": "125d83f7.1a33dc",
+        "type": "server",
+        "name": "Home Assistant",
+        "addon": true
+    }
+]

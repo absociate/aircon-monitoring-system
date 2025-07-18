@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>字母E展开图示例</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .title {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .svg-container {
+            text-align: center;
+            margin: 20px 0;
+            padding: 20px;
+            border: 2px dashed #ccc;
+            border-radius: 10px;
+        }
+        .instructions {
+            background: #e7f3ff;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        .print-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px;
+        }
+        .print-btn:hover {
+            background: #0056b3;
+        }
+        /* SVG样式 */
+        .cut-line { fill: none; stroke: #000; stroke-width: 2; }
+        .fold-line { fill: none; stroke: #666; stroke-width: 1; stroke-dasharray: 3,3; }
+        .glue-tab { fill: #fff3cd; stroke: #856404; stroke-width: 1; }
+        .label-text { font-family: Arial; font-size: 12px; text-anchor: middle; fill: #333; }
+        
+        @media print {
+            body * { visibility: hidden; }
+            .svg-container, .svg-container * { visibility: visible; }
+            .svg-container {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: 100%;
+                border: none;
+                padding: 0;
+                margin: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="title">🎨 字母E - 3D展开图示例</h1>
+        
+        <div class="instructions">
+            <h3>📋 制作说明：</h3>
+            <ol>
+                <li><strong>打印：</strong>点击下方按钮打印此页面到A4纸上</li>
+                <li><strong>裁剪：</strong>沿着<strong>实线</strong>裁剪整个展开图</li>
+                <li><strong>折叠：</strong>沿着<strong>虚线</strong>向上折叠90度</li>
+                <li><strong>粘贴：</strong>在黄色胶水标签上涂胶水，按顺序粘贴</li>
+                <li><strong>完成：</strong>等待胶水干燥，您的3D字母E就完成了！</li>
+            </ol>
+        </div>
+
+        <div class="svg-container">
+            <svg width="700" height="500" viewBox="0 0 700 500">
+                <!-- 主展开图 -->
+                <g transform="translate(200, 100)">
+                    <!-- 外框（裁剪线） -->
+                    <path d="M 45 20 L 45 230 L 205 230 L 205 205 L 95 205 L 95 165 L 185 165 L 185 145 L 95 145 L 95 105 L 205 105 L 205 80 L 45 80 L 45 20 Z" 
+                          class="cut-line" fill="#f8f9fa"/>
+                    
+                    <!-- 字母轮廓（折叠线） -->
+                    <path d="M 75 50 L 75 200 L 175 200 L 175 175 L 125 175 L 125 135 L 155 135 L 155 115 L 125 115 L 125 75 L 175 75 L 175 50 Z" 
+                          class="fold-line"/>
+                    
+                    <!-- 胶水标签 -->
+                    <circle cx="60" cy="35" r="8" class="glue-tab"/>
+                    <text x="60" y="38" class="label-text" style="font-size: 8px;">胶</text>
+                    
+                    <circle cx="190" cy="35" r="8" class="glue-tab"/>
+                    <text x="190" y="38" class="label-text" style="font-size: 8px;">胶</text>
+                    
+                    <circle cx="60" cy="215" r="8" class="glue-tab"/>
+                    <text x="60" y="218" class="label-text" style="font-size: 8px;">胶</text>
+                    
+                    <circle cx="190" cy="215" r="8" class="glue-tab"/>
+                    <text x="190" y="218" class="label-text" style="font-size: 8px;">胶</text>
+                    
+                    <circle cx="140" cy="35" r="8" class="glue-tab"/>
+                    <text x="140" y="38" class="label-text" style="font-size: 8px;">胶</text>
+                    
+                    <circle cx="140" cy="215" r="8" class="glue-tab"/>
+                    <text x="140" y="218" class="label-text" style="font-size: 8px;">胶</text>
+                    
+                    <!-- 标签 -->
+                    <text x="125" y="270" class="label-text" style="font-size: 14px;">字母 E - 主体展开图</text>
+                </g>
+                
+                <!-- 侧面条带 -->
+                <g transform="translate(50, 380)">
+                    <!-- 主条带 -->
+                    <rect x="0" y="0" width="600" height="30" class="cut-line" fill="#f8f9fa"/>
+                    
+                    <!-- 分段线 -->
+                    <line x1="100" y1="0" x2="100" y2="30" class="fold-line"/>
+                    <line x1="200" y1="0" x2="200" y2="30" class="fold-line"/>
+                    <line x1="300" y1="0" x2="300" y2="30" class="fold-line"/>
+                    <line x1="400" y1="0" x2="400" y2="30" class="fold-line"/>
+                    <line x1="500" y1="0" x2="500" y2="30" class="fold-line"/>
+                    
+                    <!-- 胶水标签 -->
+                    <rect x="90" y="-12" width="20" height="12" class="glue-tab"/>
+                    <rect x="290" y="-12" width="20" height="12" class="glue-tab"/>
+                    <rect x="490" y="-12" width="20" height="12" class="glue-tab"/>
+                    
+                    <rect x="90" y="30" width="20" height="12" class="glue-tab"/>
+                    <rect x="290" y="30" width="20" height="12" class="glue-tab"/>
+                    <rect x="490" y="30" width="20" height="12" class="glue-tab"/>
+                    
+                    <!-- 标签 -->
+                    <text x="300" y="55" class="label-text" style="font-size: 14px;">侧面条带 - 围绕字母轮廓粘贴</text>
+                </g>
+                
+                <!-- 参考轮廓 -->
+                <g transform="translate(500, 100)">
+                    <path d="M 75 50 L 75 200 L 175 200 L 175 175 L 125 175 L 125 135 L 155 135 L 155 115 L 125 115 L 125 75 L 175 75 L 175 50 Z" 
+                          fill="#e9ecef" stroke="#ccc" stroke-width="1"/>
+                    <text x="125" y="230" class="label-text" style="font-size: 12px;">参考轮廓 - E</text>
+                </g>
+                
+                <!-- 制作说明 -->
+                <g transform="translate(30, 30)">
+                    <text x="0" y="0" class="label-text" style="font-size: 12px; text-anchor: start; fill: #666;">制作说明：</text>
+                    <text x="0" y="15" class="label-text" style="font-size: 11px; text-anchor: start; fill: #666;">1. 沿实线裁剪</text>
+                    <text x="0" y="30" class="label-text" style="font-size: 11px; text-anchor: start; fill: #666;">2. 沿虚线折叠</text>
+                    <text x="0" y="45" class="label-text" style="font-size: 11px; text-anchor: start; fill: #666;">3. 黄色区域涂胶水</text>
+                    <text x="0" y="60" class="label-text" style="font-size: 11px; text-anchor: start; fill: #666;">4. 按顺序粘贴组装</text>
+                </g>
+                
+                <!-- 线条说明 -->
+                <g transform="translate(30, 450)">
+                    <line x1="0" y1="0" x2="20" y2="0" class="cut-line"/>
+                    <text x="25" y="4" class="label-text" style="font-size: 10px; text-anchor: start;">实线 = 裁剪线</text>
+                    
+                    <line x1="120" y1="0" x2="140" y2="0" class="fold-line"/>
+                    <text x="145" y="4" class="label-text" style="font-size: 10px; text-anchor: start;">虚线 = 折叠线</text>
+                    
+                    <rect x="240" y="-5" width="15" height="10" class="glue-tab"/>
+                    <text x="260" y="4" class="label-text" style="font-size: 10px; text-anchor: start;">黄色 = 胶水标签</text>
+                </g>
+            </svg>
+        </div>
+        
+        <div style="text-align: center;">
+            <button class="print-btn" onclick="window.print()">🖨️ 打印展开图</button>
+            <button class="print-btn" onclick="window.location.href='professional-3d-generator.html'" style="background: #28a745;">🔧 生成其他字母</button>
+        </div>
+        
+        <div class="instructions">
+            <h3>💡 制作技巧：</h3>
+            <ul>
+                <li>使用较厚的卡纸（160-200g）效果更好</li>
+                <li>折叠前用尺子压出清晰的折痕</li>
+                <li>胶水用量要适中，避免溢出</li>
+                <li>从一端开始，逐步粘贴侧面条带</li>
+                <li>最后检查所有接缝是否牢固</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

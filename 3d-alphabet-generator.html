@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D字母展开图生成器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .controls {
+            padding: 30px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .control-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .control-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .control-item label {
+            font-weight: bold;
+            color: #495057;
+        }
+
+        .letter-selector {
+            display: grid;
+            grid-template-columns: repeat(13, 1fr);
+            gap: 5px;
+            max-width: 600px;
+        }
+
+        .letter-btn {
+            width: 40px;
+            height: 40px;
+            border: 2px solid #dee2e6;
+            background: white;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .letter-btn:hover {
+            background: #e9ecef;
+            transform: translateY(-2px);
+        }
+
+        .letter-btn.active {
+            background: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+
+        .slider-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .slider {
+            width: 150px;
+            height: 5px;
+            border-radius: 5px;
+            background: #dee2e6;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #007bff;
+            cursor: pointer;
+        }
+
+        .generate-btn {
+            background: linear-gradient(45deg, #28a745, #20c997);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .generate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.4);
+        }
+
+        .output-section {
+            padding: 30px;
+            text-align: center;
+        }
+
+        .svg-container {
+            background: white;
+            border: 2px dashed #dee2e6;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            min-height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .print-btn {
+            background: linear-gradient(45deg, #6f42c1, #e83e8c);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 10px;
+        }
+
+        .print-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(111, 66, 193, 0.4);
+        }
+
+        .instructions {
+            background: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: left;
+        }
+
+        .instructions h3 {
+            color: #0066cc;
+            margin-bottom: 15px;
+        }
+
+        .instructions ol {
+            margin-left: 20px;
+        }
+
+        .instructions li {
+            margin-bottom: 8px;
+            line-height: 1.5;
+        }
+
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            .svg-container, .svg-container * {
+                visibility: visible;
+            }
+            .svg-container {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: 100%;
+                border: none;
+                padding: 0;
+                margin: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎨 3D字母展开图生成器</h1>
+            <p>选择字母，生成展开图，打印裁剪，制作立体字母！</p>
+        </div>
+
+        <div class="controls">
+            <div class="control-group">
+                <div class="control-item">
+                    <label>选择字母：</label>
+                    <div class="letter-selector" id="letterSelector">
+                        <!-- 字母按钮将通过JavaScript生成 -->
+                    </div>
+                </div>
+
+                <div class="control-item">
+                    <label>字母大小：</label>
+                    <div class="slider-container">
+                        <input type="range" id="sizeSlider" class="slider" min="100" max="300" value="200">
+                        <span id="sizeValue">200px</span>
+                    </div>
+                </div>
+
+                <div class="control-item">
+                    <label>厚度：</label>
+                    <div class="slider-container">
+                        <input type="range" id="thicknessSlider" class="slider" min="10" max="50" value="25">
+                        <span id="thicknessValue">25px</span>
+                    </div>
+                </div>
+
+                <div class="control-item">
+                    <button class="generate-btn" onclick="generateUnfoldedLetter()">生成展开图</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="output-section">
+            <div class="svg-container" id="svgContainer">
+                <p style="color: #6c757d; font-size: 18px;">请选择字母并点击"生成展开图"</p>
+            </div>
+            
+            <button class="print-btn" onclick="printUnfoldedLetter()" style="display: none;" id="printBtn">🖨️ 打印展开图</button>
+            
+            <div class="instructions">
+                <h3>📋 制作说明：</h3>
+                <ol>
+                    <li><strong>打印：</strong>使用A4纸打印生成的展开图</li>
+                    <li><strong>裁剪：</strong>沿着实线裁剪字母轮廓</li>
+                    <li><strong>折叠：</strong>沿着虚线向内折叠</li>
+                    <li><strong>粘贴：</strong>将标有"胶水"的标签涂上胶水，按顺序粘贴</li>
+                    <li><strong>完成：</strong>等待胶水干燥，您的3D字母就完成了！</li>
+                </ol>
+                <p><strong>💡 小贴士：</strong>建议使用较厚的纸张（如卡纸）以获得更好的立体效果。</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="letter-templates.js"></script>
+    <script>
+        let selectedLetter = 'A';
+        let letterSize = 200;
+        let thickness = 25;
+
+        // 初始化页面
+        function initializePage() {
+            createLetterSelector();
+            updateSliderValues();
+            generateUnfoldedLetter();
+        }
+
+        // 创建字母选择器
+        function createLetterSelector() {
+            const selector = document.getElementById('letterSelector');
+            for (let i = 65; i <= 90; i++) {
+                const letter = String.fromCharCode(i);
+                const btn = document.createElement('button');
+                btn.className = 'letter-btn';
+                btn.textContent = letter;
+                btn.onclick = () => selectLetter(letter, btn);
+                if (letter === 'A') btn.classList.add('active');
+                selector.appendChild(btn);
+            }
+        }
+
+        // 选择字母
+        function selectLetter(letter, btn) {
+            document.querySelectorAll('.letter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            selectedLetter = letter;
+        }
+
+        // 更新滑块值显示
+        function updateSliderValues() {
+            const sizeSlider = document.getElementById('sizeSlider');
+            const thicknessSlider = document.getElementById('thicknessSlider');
+            const sizeValue = document.getElementById('sizeValue');
+            const thicknessValue = document.getElementById('thicknessValue');
+
+            sizeSlider.oninput = function() {
+                letterSize = this.value;
+                sizeValue.textContent = this.value + 'px';
+            };
+
+            thicknessSlider.oninput = function() {
+                thickness = this.value;
+                thicknessValue.textContent = this.value + 'px';
+            };
+        }
+
+        // 字母路径数据
+        function getLetterPath(letter) {
+            const paths = {
+                'A': 'M50 180 L100 20 L150 180 M75 120 L125 120',
+                'B': 'M50 20 L50 180 L120 180 Q140 180 140 160 Q140 140 120 140 L50 140 M50 140 Q140 140 140 100 Q140 20 120 20 L50 20',
+                'C': 'M140 40 Q120 20 90 20 Q50 20 50 60 L50 140 Q50 180 90 180 Q120 180 140 160',
+                'D': 'M50 20 L50 180 L110 180 Q150 180 150 140 L150 60 Q150 20 110 20 L50 20',
+                'E': 'M50 20 L50 180 L140 180 M50 100 L120 100 M50 20 L140 20',
+                'F': 'M50 20 L50 180 M50 100 L120 100 M50 20 L140 20',
+                'G': 'M140 40 Q120 20 90 20 Q50 20 50 60 L50 140 Q50 180 90 180 Q120 180 140 160 L140 120 L110 120',
+                'H': 'M50 20 L50 180 M150 20 L150 180 M50 100 L150 100',
+                'I': 'M75 20 L125 20 M100 20 L100 180 M75 180 L125 180',
+                'J': 'M120 20 L120 140 Q120 180 80 180 Q50 180 50 160',
+                'K': 'M50 20 L50 180 M50 100 L150 20 M80 120 L150 180',
+                'L': 'M50 20 L50 180 L140 180',
+                'M': 'M50 180 L50 20 L100 80 L150 20 L150 180',
+                'N': 'M50 180 L50 20 L150 180 L150 20',
+                'O': 'M100 20 Q50 20 50 100 Q50 180 100 180 Q150 180 150 100 Q150 20 100 20',
+                'P': 'M50 20 L50 180 M50 20 L120 20 Q150 20 150 60 Q150 100 120 100 L50 100',
+                'Q': 'M100 20 Q50 20 50 100 Q50 180 100 180 Q150 180 150 100 Q150 20 100 20 M120 140 L150 180',
+                'R': 'M50 20 L50 180 M50 20 L120 20 Q150 20 150 60 Q150 100 120 100 L50 100 M100 100 L150 180',
+                'S': 'M140 40 Q120 20 90 20 Q50 20 50 60 Q50 100 90 100 Q150 100 150 140 Q150 180 110 180 Q80 180 60 160',
+                'T': 'M50 20 L150 20 M100 20 L100 180',
+                'U': 'M50 20 L50 140 Q50 180 100 180 Q150 180 150 140 L150 20',
+                'V': 'M50 20 L100 180 L150 20',
+                'W': 'M50 20 L75 180 L100 120 L125 180 L150 20',
+                'X': 'M50 20 L150 180 M150 20 L50 180',
+                'Y': 'M50 20 L100 100 L150 20 M100 100 L100 180',
+                'Z': 'M50 20 L150 20 L50 180 L150 180'
+            };
+            return paths[letter] || paths['A'];
+        }
+
+        // 生成展开图
+        function generateUnfoldedLetter() {
+            const container = document.getElementById('svgContainer');
+            const printBtn = document.getElementById('printBtn');
+
+            // 清空容器
+            container.innerHTML = '';
+
+            let svg;
+
+            // 尝试使用精确模板
+            if (typeof generatePreciseUnfoldedLetter !== 'undefined') {
+                svg = generatePreciseUnfoldedLetter(selectedLetter, letterSize, thickness);
+            } else {
+                // 回退到基本生成器
+                svg = generateBasicUnfoldedLetter();
+            }
+
+            container.appendChild(svg);
+            printBtn.style.display = 'inline-block';
+        }
+
+        // 基本展开图生成器（备用）
+        function generateBasicUnfoldedLetter() {
+            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svg.setAttribute('width', '800');
+            svg.setAttribute('height', '600');
+            svg.setAttribute('viewBox', '0 0 800 600');
+
+            // 添加样式定义
+            const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+            const style = document.createElementNS('http://www.w3.org/2000/svg', 'style');
+            style.textContent = `
+                .letter-face { fill: none; stroke: #000; stroke-width: 2; }
+                .fold-line { fill: none; stroke: #666; stroke-width: 1; stroke-dasharray: 5,5; }
+                .glue-tab { fill: #ffeb3b; stroke: #000; stroke-width: 1; opacity: 0.7; }
+                .label-text { font-family: Arial; font-size: 12px; text-anchor: middle; }
+                .cut-line { fill: none; stroke: #000; stroke-width: 2; }
+                .side-strip { fill: #f0f0f0; stroke: #000; stroke-width: 1; }
+            `;
+            defs.appendChild(style);
+            svg.appendChild(defs);
+
+            // 计算缩放比例
+            const scale = letterSize / 200;
+            const scaledThickness = thickness * scale;
+
+            // 生成字母路径
+            const letterPath = getLetterPath(selectedLetter);
+
+            // 主面（正面）
+            const frontFace = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            frontFace.setAttribute('transform', `translate(100, 100) scale(${scale})`);
+
+            const frontPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            frontPath.setAttribute('d', letterPath);
+            frontPath.setAttribute('class', 'letter-face');
+            frontFace.appendChild(frontPath);
+
+            // 添加标签
+            const frontLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            frontLabel.setAttribute('x', '100');
+            frontLabel.setAttribute('y', '210');
+            frontLabel.setAttribute('class', 'label-text');
+            frontLabel.textContent = '正面';
+            frontFace.appendChild(frontLabel);
+
+            svg.appendChild(frontFace);
+
+            // 背面
+            const backFace = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            backFace.setAttribute('transform', `translate(400, 100) scale(${scale})`);
+
+            const backPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            backPath.setAttribute('d', letterPath);
+            backPath.setAttribute('class', 'letter-face');
+            backFace.appendChild(backPath);
+
+            const backLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            backLabel.setAttribute('x', '100');
+            backLabel.setAttribute('y', '210');
+            backLabel.setAttribute('class', 'label-text');
+            backLabel.textContent = '背面';
+            backFace.appendChild(backLabel);
+
+            svg.appendChild(backFace);
+
+            // 侧面条带
+            const sideStrips = generateSideStrips(letterPath, scale, scaledThickness);
+            sideStrips.forEach(strip => svg.appendChild(strip));
+
+            // 添加折叠线和胶水标签
+            addFoldLinesAndGlueTabs(svg, scale, scaledThickness);
+
+            return svg;
+        }
+
+        // 生成侧面条带
+        function generateSideStrips(letterPath, scale, thickness) {
+            const strips = [];
+
+            // 简化的侧面条带生成
+            for (let i = 0; i < 4; i++) {
+                const strip = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                strip.setAttribute('transform', `translate(${100 + i * 150}, 400)`);
+
+                const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                rect.setAttribute('x', '0');
+                rect.setAttribute('y', '0');
+                rect.setAttribute('width', `${100 * scale}`);
+                rect.setAttribute('height', `${thickness}`);
+                rect.setAttribute('class', 'letter-face');
+                strip.appendChild(rect);
+
+                // 胶水标签
+                const glueTabs = generateGlueTabs(100 * scale, thickness);
+                glueTabs.forEach(tab => strip.appendChild(tab));
+
+                const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                label.setAttribute('x', `${50 * scale}`);
+                label.setAttribute('y', `${thickness + 20}`);
+                label.setAttribute('class', 'label-text');
+                label.textContent = `侧面 ${i + 1}`;
+                strip.appendChild(label);
+
+                strips.push(strip);
+            }
+
+            return strips;
+        }
+
+        // 生成胶水标签
+        function generateGlueTabs(width, height) {
+            const tabs = [];
+            const tabWidth = 15;
+            const tabHeight = 10;
+
+            // 上方标签
+            const topTab = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            topTab.setAttribute('x', `${width / 2 - tabWidth / 2}`);
+            topTab.setAttribute('y', `-${tabHeight}`);
+            topTab.setAttribute('width', `${tabWidth}`);
+            topTab.setAttribute('height', `${tabHeight}`);
+            topTab.setAttribute('class', 'glue-tab');
+            tabs.push(topTab);
+
+            // 下方标签
+            const bottomTab = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            bottomTab.setAttribute('x', `${width / 2 - tabWidth / 2}`);
+            bottomTab.setAttribute('y', `${height}`);
+            bottomTab.setAttribute('width', `${tabWidth}`);
+            bottomTab.setAttribute('height', `${tabHeight}`);
+            bottomTab.setAttribute('class', 'glue-tab');
+            tabs.push(bottomTab);
+
+            return tabs;
+        }
+
+        // 添加折叠线和胶水标签
+        function addFoldLinesAndGlueTabs(svg, scale, thickness) {
+            // 添加一些示例折叠线
+            const foldLine1 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            foldLine1.setAttribute('x1', `${100 + 200 * scale}`);
+            foldLine1.setAttribute('y1', '100');
+            foldLine1.setAttribute('x2', `${100 + 200 * scale}`);
+            foldLine1.setAttribute('y2', `${100 + 200 * scale}`);
+            foldLine1.setAttribute('class', 'fold-line');
+            svg.appendChild(foldLine1);
+
+            // 添加说明文字
+            const instruction = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            instruction.setAttribute('x', '400');
+            instruction.setAttribute('y', '550');
+            instruction.setAttribute('class', 'label-text');
+            instruction.setAttribute('style', 'font-size: 14px; fill: #666;');
+            instruction.textContent = '实线：裁剪线 | 虚线：折叠线 | 黄色：胶水标签';
+            svg.appendChild(instruction);
+        }
+
+        // 打印功能
+        function printUnfoldedLetter() {
+            window.print();
+        }
+
+        // 页面加载完成后初始化
+        window.onload = initializePage;
+    </script>
+</body>
+</html>

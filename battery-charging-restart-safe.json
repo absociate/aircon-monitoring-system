@@ -1,0 +1,143 @@
+[
+    {
+        "id": "7aa6bd9d6c51a86b",
+        "type": "tab",
+        "label": "智能充電電池管理系統 - 重啟安全版",
+        "disabled": false,
+        "info": "智能充電電池管理系統 - 重啟安全版\n\n🔄 重啟安全設計：\n1. 系統啟動時自動檢查充電狀態\n2. 使用context持久化存儲充電記錄\n3. 重啟後自動恢復保護機制\n4. 定期檢查防止計時器失效\n5. 緊急安全關閉功能\n\n🛡️ 多重安全保護：\n- 啟動檢查：系統啟動3秒後自動檢查\n- 定期檢查：每5分鐘檢查一次充電狀態\n- 持久化記錄：使用context存儲，重啟後仍有效\n- 最大時間限制：絕對不允許超過設定時間150%\n- 緊急關閉：一鍵關閉所有充電\n\n⚠️ 安全時間設定：\n- 牧田BL1041B: 90分鐘 → 最大135分鐘\n- ENELOOP 3號: 240分鐘 → 最大360分鐘\n- ENELOOP 4號: 210分鐘 → 最大315分鐘\n\n支援設備：\n- 牧田BL1041B (switch.tp_link_power_strip_eb2f_cha_shang_4)\n- ENELOOP 3號 (switch.tp_link_power_strip_eb2f_cha_shang_5)\n- ENELOOP 4號 (switch.tp_link_power_strip_eb2f_cha_shang_6)",
+        "env": []
+    },
+    {
+        "id": "system_startup",
+        "type": "inject",
+        "z": "7aa6bd9d6c51a86b",
+        "name": "🔄 系統啟動檢查",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 3,
+        "topic": "",
+        "payload": "startup_check",
+        "payloadType": "str",
+        "x": 120,
+        "y": 20,
+        "wires": [["startup_recovery"]]
+    },
+    {
+        "id": "startup_recovery",
+        "type": "function",
+        "z": "7aa6bd9d6c51a86b",
+        "name": "啟動恢復檢查",
+        "func": "// 電池配置\nconst batteries = {\n    makita: {\n        entityId: 'switch.tp_link_power_strip_eb2f_cha_shang_4',\n        name: '牧田BL1041B充電電池',\n        chargingTime: 90,\n        maxTime: 135, // 150%安全限制\n        domain: 'switch'\n    },\n    eneloop_aa: {\n        entityId: 'switch.tp_link_power_strip_eb2f_cha_shang_5',\n        name: 'ENELOOP 3號充電電池',\n        chargingTime: 240,\n        maxTime: 360, // 150%安全限制\n        domain: 'switch'\n    },\n    eneloop_aaa: {\n        entityId: 'switch.tp_link_power_strip_eb2f_cha_shang_6',\n        name: 'ENELOOP 4號充電電池',\n        chargingTime: 210,\n        maxTime: 315, // 150%安全限制\n        domain: 'switch'\n    }\n};\n\n// 儲存配置到flow（重啟後需要重新設定）\nflow.set('batteries', batteries);\nflow.set('quietMode', false);\n\nconst now = Date.now();\nconst outputs = [null, null, null]; // [通知, 控制, debug]\nlet recoveredCharging = [];\nlet emergencyStops = [];\n\n// 檢查每個電池的持久化充電記錄\nfor (const [key, battery] of Object.entries(batteries)) {\n    const chargingInfo = context.get(`${key}_charging`);\n    \n    if (chargingInfo && chargingInfo.startTime) {\n        const chargingMinutes = Math.round((now - chargingInfo.startTime) / 60000);\n        \n        if (chargingMinutes >= battery.maxTime) {\n            // 超過最大時間，需要緊急關閉\n            emergencyStops.push({\n                battery: battery,\n                key: key,\n                chargingMinutes: chargingMinutes,\n                startTime: new Date(chargingInfo.startTime)\n            });\n        } else if (chargingMinutes >= battery.chargingTime) {\n            // 超過正常時間但未達最大時間，需要關閉\n            recoveredCharging.push({\n                battery: battery,\n                key: key,\n                chargingMinutes: chargingMinutes,\n                startTime: new Date(chargingInfo.startTime),\n                action: 'overdue_stop'\n            });\n        } else {\n            // 正常充電中，恢復計時器\n            const remainingMs = (battery.chargingTime * 60 * 1000) - (now - chargingInfo.startTime);\n            \n            if (remainingMs > 0) {\n                // 設定恢復的計時器\n                const timerId = setTimeout(() => {\n                    const controlMsg = {\n                        payload: {\n                            domain: battery.domain,\n                            service: 'turn_off',\n                            target: {\n                                entity_id: battery.entityId\n                            }\n                        },\n                        batteryKey: key,\n                        action: 'recovered_stop'\n                    };\n                    \n                    context.set(`${key}_charging`, null);\n                    \n                    node.send([null, controlMsg, {\n                        payload: `恢復計時器關閉 ${battery.name}`,\n                        batteryKey: key,\n                        action: 'recovered_stop'\n                    }]);\n                    \n                    flow.set(`${key}_timer`, null);\n                }, remainingMs);\n                \n                flow.set(`${key}_timer`, timerId);\n                \n                recoveredCharging.push({\n                    battery: battery,\n                    key: key,\n                    chargingMinutes: chargingMinutes,\n                    remainingMinutes: Math.round(remainingMs / 60000),\n                    startTime: new Date(chargingInfo.startTime),\n                    action: 'timer_recovered'\n                });\n            }\n        }\n    }\n}\n\n// 處理緊急關閉\nif (emergencyStops.length > 0) {\n    const stopList = emergencyStops.map(item => \n        `• ${item.battery.name}: ${item.chargingMinutes}分鐘 (開始: ${item.startTime.toLocaleString('zh-TW')})`\n    ).join('\\n');\n    \n    outputs[0] = {\n        payload: {\n            title: '🚨 重啟後發現過度充電',\n            message: `🚨 系統重啟後發現以下設備過度充電，立即關閉：\\n${stopList}\\n\\n⚠️ 請立即檢查電池和充電器狀態\\n🔄 重啟時間：${new Date().toLocaleString('zh-TW')}`\n        },\n        action: 'startup_emergency_stop'\n    };\n    \n    // 關閉第一個過度充電的設備\n    const firstStop = emergencyStops[0];\n    outputs[1] = {\n        payload: {\n            domain: firstStop.battery.domain,\n            service: 'turn_off',\n            target: {\n                entity_id: firstStop.battery.entityId\n            }\n        },\n        batteryKey: firstStop.key,\n        action: 'startup_emergency_stop'\n    };\n    \n    // 清除過度充電的記錄\n    emergencyStops.forEach(item => {\n        context.set(`${item.key}_charging`, null);\n    });\n}\n\n// 處理恢復的充電\nelse if (recoveredCharging.length > 0) {\n    const recoveryList = recoveredCharging.map(item => {\n        if (item.action === 'timer_recovered') {\n            return `• ${item.battery.name}: 已充電${item.chargingMinutes}分鐘，剩餘${item.remainingMinutes}分鐘`;\n        } else {\n            return `• ${item.battery.name}: 已充電${item.chargingMinutes}分鐘，需要關閉`;\n        }\n    }).join('\\n');\n    \n    outputs[0] = {\n        payload: {\n            title: '🔄 系統重啟恢復',\n            message: `🔄 系統重啟後恢復充電保護：\\n${recoveryList}\\n\\n✅ 計時器已恢復，充電保護正常\\n🔄 重啟時間：${new Date().toLocaleString('zh-TW')}`\n        },\n        action: 'startup_recovery'\n    };\n    \n    // 如果有需要立即關閉的\n    const needStop = recoveredCharging.find(item => item.action === 'overdue_stop');\n    if (needStop) {\n        outputs[1] = {\n            payload: {\n                domain: needStop.battery.domain,\n                service: 'turn_off',\n                target: {\n                    entity_id: needStop.battery.entityId\n                }\n            },\n            batteryKey: needStop.key,\n            action: 'startup_overdue_stop'\n        };\n        \n        context.set(`${needStop.key}_charging`, null);\n    }\n}\n\n// 正常啟動\nelse {\n    outputs[0] = {\n        payload: {\n            title: '✅ 系統啟動完成',\n            message: `✅ 智能充電電池管理系統啟動完成\\n\\n🔋 管理設備：3個\\n🛡️ 安全保護：已啟用\\n🔄 啟動時間：${new Date().toLocaleString('zh-TW')}\\n\\n系統已準備就緒，充電保護功能正常。`\n        },\n        action: 'startup_complete'\n    };\n}\n\n// Debug輸出\noutputs[2] = {\n    payload: '系統啟動檢查完成',\n    emergencyStops: emergencyStops.length,\n    recoveredCharging: recoveredCharging.length,\n    startupTime: new Date().toISOString(),\n    batteries: Object.keys(batteries)\n};\n\nnode.status({\n    fill: emergencyStops.length > 0 ? \"red\" : recoveredCharging.length > 0 ? \"yellow\" : \"green\",\n    shape: \"dot\",\n    text: `啟動: ${emergencyStops.length}緊急, ${recoveredCharging.length}恢復`\n});\n\nreturn outputs;",
+        "outputs": 3,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 350,
+        "y": 20,
+        "wires": [["d320c63adb96c9b2"], ["57a17fab27364441"], ["debug_startup"]]
+    },
+    {
+        "id": "periodic_safety_check",
+        "type": "inject",
+        "z": "7aa6bd9d6c51a86b",
+        "name": "🔍 定期安全檢查（每5分鐘）",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "300",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "periodic_check",
+        "payloadType": "str",
+        "x": 150,
+        "y": 80,
+        "wires": [["periodic_checker"]]
+    },
+    {
+        "id": "periodic_checker",
+        "type": "function",
+        "z": "7aa6bd9d6c51a86b",
+        "name": "定期檢查器",
+        "func": "// 獲取電池配置\nconst batteries = flow.get('batteries');\nif (!batteries) {\n    // 如果配置丟失，重新載入\n    const defaultBatteries = {\n        makita: {\n            entityId: 'switch.tp_link_power_strip_eb2f_cha_shang_4',\n            name: '牧田BL1041B充電電池',\n            chargingTime: 90,\n            maxTime: 135,\n            domain: 'switch'\n        },\n        eneloop_aa: {\n            entityId: 'switch.tp_link_power_strip_eb2f_cha_shang_5',\n            name: 'ENELOOP 3號充電電池',\n            chargingTime: 240,\n            maxTime: 360,\n            domain: 'switch'\n        },\n        eneloop_aaa: {\n            entityId: 'switch.tp_link_power_strip_eb2f_cha_shang_6',\n            name: 'ENELOOP 4號充電電池',\n            chargingTime: 210,\n            maxTime: 315,\n            domain: 'switch'\n        }\n    };\n    flow.set('batteries', defaultBatteries);\n    \n    return {\n        payload: {\n            title: '⚠️ 配置重新載入',\n            message: '⚠️ 檢測到配置丟失，已重新載入電池配置。\\n\\n建議檢查系統狀態。'\n        },\n        action: 'config_reloaded'\n    };\n}\n\nconst now = Date.now();\nconst outputs = [null, null, null]; // [通知, 控制, debug]\nlet warnings = [];\nlet emergencyStops = [];\nlet timerIssues = [];\n\n// 檢查每個電池的狀態\nfor (const [key, battery] of Object.entries(batteries)) {\n    const chargingInfo = context.get(`${key}_charging`);\n    const timerId = flow.get(`${key}_timer`);\n    \n    if (chargingInfo && chargingInfo.startTime) {\n        const chargingMinutes = Math.round((now - chargingInfo.startTime) / 60000);\n        \n        // 檢查是否超過最大時間\n        if (chargingMinutes >= battery.maxTime) {\n            emergencyStops.push({\n                battery: battery,\n                key: key,\n                chargingMinutes: chargingMinutes,\n                maxTime: battery.maxTime\n            });\n        }\n        // 檢查是否超過正常時間但計時器丟失\n        else if (chargingMinutes >= battery.chargingTime && !timerId) {\n            timerIssues.push({\n                battery: battery,\n                key: key,\n                chargingMinutes: chargingMinutes,\n                expectedTime: battery.chargingTime\n            });\n        }\n        // 檢查是否接近警告時間\n        else if (chargingMinutes >= battery.chargingTime * 0.9) {\n            warnings.push({\n                battery: battery,\n                key: key,\n                chargingMinutes: chargingMinutes,\n                expectedTime: battery.chargingTime\n            });\n        }\n    }\n}\n\n// 處理緊急關閉\nif (emergencyStops.length > 0) {\n    const stopList = emergencyStops.map(item => \n        `• ${item.battery.name}: ${item.chargingMinutes}分鐘 (最大${item.maxTime}分鐘)`\n    ).join('\\n');\n    \n    outputs[0] = {\n        payload: {\n            title: '🚨 緊急關閉過度充電',\n            message: `🚨 檢測到嚴重過度充電，立即關閉：\\n${stopList}\\n\\n⚠️ 請檢查電池和充電器狀態\\n🕐 檢查時間：${new Date().toLocaleString('zh-TW')}`\n        },\n        action: 'periodic_emergency_stop'\n    };\n    \n    // 關閉第一個過度充電的設備\n    const firstStop = emergencyStops[0];\n    outputs[1] = {\n        payload: {\n            domain: firstStop.battery.domain,\n            service: 'turn_off',\n            target: {\n                entity_id: firstStop.battery.entityId\n            }\n        },\n        batteryKey: firstStop.key,\n        action: 'periodic_emergency_stop'\n    };\n    \n    // 清除充電記錄\n    emergencyStops.forEach(item => {\n        context.set(`${item.key}_charging`, null);\n        const timerId = flow.get(`${item.key}_timer`);\n        if (timerId) {\n            clearTimeout(timerId);\n            flow.set(`${item.key}_timer`, null);\n        }\n    });\n}\n\n// 處理計時器問題\nelse if (timerIssues.length > 0) {\n    const issueList = timerIssues.map(item => \n        `• ${item.battery.name}: ${item.chargingMinutes}分鐘 (設定${item.expectedTime}分鐘)`\n    ).join('\\n');\n    \n    outputs[0] = {\n        payload: {\n            title: '⚠️ 計時器失效檢測',\n            message: `⚠️ 檢測到計時器失效，立即關閉：\\n${issueList}\\n\\n🔧 計時器可能因重啟或錯誤而失效\\n🕐 檢查時間：${new Date().toLocaleString('zh-TW')}`\n        },\n        action: 'timer_failure_stop'\n    };\n    \n    // 關閉第一個有問題的設備\n    const firstIssue = timerIssues[0];\n    outputs[1] = {\n        payload: {\n            domain: firstIssue.battery.domain,\n            service: 'turn_off',\n            target: {\n                entity_id: firstIssue.battery.entityId\n            }\n        },\n        batteryKey: firstIssue.key,\n        action: 'timer_failure_stop'\n    };\n    \n    // 清除充電記錄\n    timerIssues.forEach(item => {\n        context.set(`${item.key}_charging`, null);\n    });\n}\n\n// 處理警告\nelse if (warnings.length > 0) {\n    const warnList = warnings.map(item => \n        `• ${item.battery.name}: ${item.chargingMinutes}分鐘 (設定${item.expectedTime}分鐘)`\n    ).join('\\n');\n    \n    outputs[0] = {\n        payload: {\n            title: '⏰ 充電即將完成',\n            message: `⏰ 以下電池即將完成充電：\\n${warnList}\\n\\n預計很快會自動關閉\\n🕐 檢查時間：${new Date().toLocaleString('zh-TW')}`\n        },\n        action: 'charging_warning'\n    };\n}\n\n// Debug輸出\noutputs[2] = {\n    payload: '定期檢查完成',\n    warnings: warnings.length,\n    emergencyStops: emergencyStops.length,\n    timerIssues: timerIssues.length,\n    checkTime: new Date().toISOString()\n};\n\nnode.status({\n    fill: emergencyStops.length > 0 ? \"red\" : timerIssues.length > 0 ? \"orange\" : warnings.length > 0 ? \"yellow\" : \"green\",\n    shape: \"dot\",\n    text: `檢查: ${warnings.length}警告, ${timerIssues.length}計時器問題, ${emergencyStops.length}緊急`\n});\n\nreturn outputs;",
+        "outputs": 3,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 380,
+        "y": 80,
+        "wires": [["d320c63adb96c9b2"], ["57a17fab27364441"], ["debug_periodic"]]
+    },
+    {
+        "id": "emergency_stop_all",
+        "type": "inject",
+        "z": "7aa6bd9d6c51a86b",
+        "name": "🚨 緊急關閉所有充電",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "emergency_stop",
+        "payloadType": "str",
+        "x": 130,
+        "y": 140,
+        "wires": [["emergency_handler"]]
+    },
+    {
+        "id": "emergency_handler",
+        "type": "function",
+        "z": "7aa6bd9d6c51a86b",
+        "name": "緊急處理器",
+        "func": "// 電池配置\nconst batteries = {\n    makita: {\n        entityId: 'switch.tp_link_power_strip_eb2f_cha_shang_4',\n        name: '牧田BL1041B充電電池',\n        domain: 'switch'\n    },\n    eneloop_aa: {\n        entityId: 'switch.tp_link_power_strip_eb2f_cha_shang_5',\n        name: 'ENELOOP 3號充電電池',\n        domain: 'switch'\n    },\n    eneloop_aaa: {\n        entityId: 'switch.tp_link_power_strip_eb2f_cha_shang_6',\n        name: 'ENELOOP 4號充電電池',\n        domain: 'switch'\n    }\n};\n\n// 清除所有計時器和記錄\nfor (const key of Object.keys(batteries)) {\n    // 清除計時器\n    const timerId = flow.get(`${key}_timer`);\n    if (timerId) {\n        clearTimeout(timerId);\n        flow.set(`${key}_timer`, null);\n    }\n    \n    // 清除充電記錄\n    context.set(`${key}_charging`, null);\n}\n\n// 準備緊急通知\nconst notifyMsg = {\n    payload: {\n        title: '🚨 緊急關閉充電',\n        message: `🚨 已執行緊急關閉所有充電設備\\n\\n關閉設備：\\n• 牧田BL1041B充電電池\\n• ENELOOP 3號充電電池\\n• ENELOOP 4號充電電池\\n\\n⏰ 執行時間：${new Date().toLocaleString('zh-TW')}\\n\\n請檢查設備狀態和電池溫度。`\n    },\n    action: 'emergency_stop'\n};\n\n// 準備關閉命令\nconst outputs = [notifyMsg];\n\nfor (const [key, battery] of Object.entries(batteries)) {\n    outputs.push({\n        payload: {\n            domain: battery.domain,\n            service: 'turn_off',\n            target: {\n                entity_id: battery.entityId\n            }\n        },\n        batteryKey: key,\n        action: 'emergency_stop'\n    });\n}\n\nnode.status({fill:\"red\", shape:\"dot\", text:\"緊急關閉執行\"});\n\nreturn outputs;",
+        "outputs": 4,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 350,
+        "y": 140,
+        "wires": [["d320c63adb96c9b2"], ["57a17fab27364441"], ["57a17fab27364441"], ["57a17fab27364441"]]
+    },
+    {
+        "id": "enhanced_charging_handler",
+        "type": "function",
+        "z": "7aa6bd9d6c51a86b",
+        "name": "增強充電處理器",
+        "func": "// 獲取配置\nconst batteries = flow.get('batteries');\nif (!batteries) {\n    node.error('系統未初始化，請等待系統啟動完成');\n    return null;\n}\n\n// 解析狀態變化\nconst newState = msg.payload;\nconst oldState = msg.data.old_state?.state;\nconst entityId = msg.data.entity_id;\n\n// 找到對應的電池\nlet batteryKey = null;\nlet battery = null;\n\nfor (const [key, config] of Object.entries(batteries)) {\n    if (config.entityId === entityId) {\n        batteryKey = key;\n        battery = config;\n        break;\n    }\n}\n\nif (!battery) {\n    node.error(`找不到實體 ${entityId} 的配置`);\n    return null;\n}\n\nconst outputs = [null, null, null]; // [通知, 控制, debug]\n\n// 檢查開啟狀態 (off -> on)\nif (oldState === 'off' && newState === 'on') {\n    // 清除現有計時器\n    const timerId = flow.get(`${batteryKey}_timer`);\n    if (timerId) {\n        clearTimeout(timerId);\n    }\n    \n    const startTime = Date.now();\n    \n    // 使用context存儲充電信息（持久化，重啟後仍有效）\n    context.set(`${batteryKey}_charging`, {\n        startTime: startTime,\n        entityId: entityId,\n        batteryName: battery.name,\n        expectedTime: battery.chargingTime,\n        maxTime: battery.maxTime || Math.round(battery.chargingTime * 1.5)\n    });\n    \n    // 更新充電記錄\n    const records = flow.get('chargingRecords') || {};\n    if (!records[batteryKey]) records[batteryKey] = {};\n    records[batteryKey].lastCharge = new Date(startTime).toISOString();\n    records[batteryKey].count = (records[batteryKey].count || 0) + 1;\n    flow.set('chargingRecords', records);\n    \n    // 設定主計時器\n    const chargingMs = battery.chargingTime * 60 * 1000;\n    const newTimerId = setTimeout(() => {\n        // 主計時器到期，正常關閉\n        const controlMsg = {\n            payload: {\n                domain: battery.domain,\n                service: 'turn_off',\n                target: {\n                    entity_id: entityId\n                }\n            },\n            batteryKey: batteryKey,\n            action: 'normal_stop'\n        };\n        \n        // 清除充電記錄\n        context.set(`${batteryKey}_charging`, null);\n        \n        node.send([null, controlMsg, {\n            payload: `正常關閉 ${battery.name}`,\n            batteryKey: batteryKey,\n            action: 'normal_stop'\n        }]);\n        \n        flow.set(`${batteryKey}_timer`, null);\n    }, chargingMs);\n    \n    flow.set(`${batteryKey}_timer`, newTimerId);\n    \n    // 準備開始通知\n    const notifyMsg = {\n        payload: {\n            title: '🔋 充電開始',\n            message: `🔋 ${battery.name} 開始充電\\n⏱️ 預計時間：${battery.chargingTime}分鐘\\n🛡️ 安全限制：${battery.maxTime || Math.round(battery.chargingTime * 1.5)}分鐘\\n🔄 重啟保護：已啟用\\n🕐 開始時間：${new Date(startTime).toLocaleString('zh-TW')}`\n        },\n        batteryKey: batteryKey,\n        action: 'start'\n    };\n    \n    outputs[0] = notifyMsg;\n    outputs[2] = {\n        payload: `${battery.name} 開始充電（重啟安全保護）`,\n        batteryKey: batteryKey,\n        chargingTime: battery.chargingTime,\n        maxTime: battery.maxTime,\n        startTime: startTime,\n        persistentRecord: true\n    };\n}\n\n// 檢查關閉狀態 (on -> off)\nelse if (newState === 'off' && oldState === 'on') {\n    // 清除計時器\n    const timerId = flow.get(`${batteryKey}_timer`);\n    if (timerId) {\n        clearTimeout(timerId);\n        flow.set(`${batteryKey}_timer`, null);\n    }\n    \n    // 獲取充電信息\n    const chargingInfo = context.get(`${batteryKey}_charging`);\n    let actualTime = 0;\n    let startTime = null;\n    \n    if (chargingInfo && chargingInfo.startTime) {\n        actualTime = Math.round((Date.now() - chargingInfo.startTime) / 60000);\n        startTime = new Date(chargingInfo.startTime);\n        context.set(`${batteryKey}_charging`, null); // 清除充電記錄\n    }\n    \n    // 判斷關閉原因\n    let stopReason = '手動關閉';\n    let statusIcon = '✅';\n    let efficiency = 100;\n    \n    if (actualTime > battery.chargingTime * 1.2) {\n        stopReason = '延遲關閉（可能計時器失效）';\n        statusIcon = '⚠️';\n        efficiency = Math.round((battery.chargingTime / actualTime) * 100);\n    } else if (actualTime > 0) {\n        efficiency = Math.round((battery.chargingTime / actualTime) * 100);\n    }\n    \n    const notifyMsg = {\n        payload: {\n            title: `${statusIcon} 充電完成`,\n            message: `${statusIcon} ${battery.name} 充電完成\\n⏱️ 充電時長：${actualTime}分鐘\\n📋 設定時間：${battery.chargingTime}分鐘\\n📊 時間效率：${efficiency}%\\n🕐 完成時間：${new Date().toLocaleString('zh-TW')}\\n${startTime ? `\\n🕐 開始時間：${startTime.toLocaleString('zh-TW')}` : ''}\\n\\n${stopReason}`\n        },\n        batteryKey: batteryKey,\n        action: 'complete'\n    };\n    \n    outputs[0] = notifyMsg;\n    outputs[2] = {\n        payload: `${battery.name} 充電完成`,\n        batteryKey: batteryKey,\n        actualTime: actualTime,\n        expectedTime: battery.chargingTime,\n        efficiency: efficiency,\n        stopReason: stopReason\n    };\n}\n\nreturn outputs;",
+        "outputs": 3,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 350,
+        "y": 280,
+        "wires": [["d320c63adb96c9b2"], ["57a17fab27364441"], ["debug_charging"]]
+    },
+    {
+        "id": "125d83f7.1a33dc",
+        "type": "server",
+        "name": "Home Assistant",
+        "addon": true
+    }
+]

@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>专业3D字母展开图生成器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .controls {
+            padding: 30px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .control-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .control-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .control-item label {
+            font-weight: bold;
+            color: #495057;
+        }
+
+        .letter-selector {
+            display: grid;
+            grid-template-columns: repeat(13, 1fr);
+            gap: 5px;
+            max-width: 600px;
+        }
+
+        .letter-btn {
+            width: 40px;
+            height: 40px;
+            border: 2px solid #dee2e6;
+            background: white;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .letter-btn:hover {
+            background: #e9ecef;
+            transform: translateY(-2px);
+        }
+
+        .letter-btn.active {
+            background: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+
+        .slider-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .slider {
+            width: 150px;
+            height: 5px;
+            border-radius: 5px;
+            background: #dee2e6;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #007bff;
+            cursor: pointer;
+        }
+
+        .generate-btn {
+            background: linear-gradient(45deg, #28a745, #20c997);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .generate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.4);
+        }
+
+        .output-section {
+            padding: 30px;
+            text-align: center;
+        }
+
+        .svg-container {
+            background: white;
+            border: 2px dashed #dee2e6;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            min-height: 600px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: auto;
+        }
+
+        .print-btn {
+            background: linear-gradient(45deg, #6f42c1, #e83e8c);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 10px;
+        }
+
+        .print-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(111, 66, 193, 0.4);
+        }
+
+        .instructions {
+            background: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: left;
+        }
+
+        .instructions h3 {
+            color: #0066cc;
+            margin-bottom: 15px;
+        }
+
+        .instructions ol {
+            margin-left: 20px;
+        }
+
+        .instructions li {
+            margin-bottom: 8px;
+            line-height: 1.5;
+        }
+
+        /* SVG样式 */
+        .cut-line {
+            fill: none;
+            stroke: #000;
+            stroke-width: 2;
+        }
+
+        .fold-line {
+            fill: none;
+            stroke: #666;
+            stroke-width: 1;
+            stroke-dasharray: 3,3;
+        }
+
+        .letter-outline {
+            fill: none;
+            stroke: #000;
+            stroke-width: 2;
+        }
+
+        .side-strip {
+            fill: #f8f9fa;
+            stroke: #000;
+            stroke-width: 1;
+        }
+
+        .glue-tab {
+            fill: #fff3cd;
+            stroke: #856404;
+            stroke-width: 1;
+        }
+
+        .label-text {
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            text-anchor: middle;
+            fill: #333;
+        }
+
+        .reference-outline {
+            fill: none;
+            stroke: #ccc;
+            stroke-width: 1;
+            stroke-dasharray: 2,2;
+        }
+
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            .svg-container, .svg-container * {
+                visibility: visible;
+            }
+            .svg-container {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: 100%;
+                border: none;
+                padding: 0;
+                margin: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎨 专业3D字母展开图生成器</h1>
+            <p>基于专业模板设计，生成可直接制作的3D字母展开图</p>
+        </div>
+
+        <div class="controls">
+            <div class="control-group">
+                <div class="control-item">
+                    <label>选择字母：</label>
+                    <div class="letter-selector" id="letterSelector">
+                        <!-- 字母按钮将通过JavaScript生成 -->
+                    </div>
+                </div>
+
+                <div class="control-item">
+                    <label>字母大小：</label>
+                    <div class="slider-container">
+                        <input type="range" id="sizeSlider" class="slider" min="150" max="400" value="250">
+                        <span id="sizeValue">250px</span>
+                    </div>
+                </div>
+
+                <div class="control-item">
+                    <label>厚度：</label>
+                    <div class="slider-container">
+                        <input type="range" id="thicknessSlider" class="slider" min="15" max="60" value="30">
+                        <span id="thicknessValue">30px</span>
+                    </div>
+                </div>
+
+                <div class="control-item">
+                    <button class="generate-btn" onclick="generateProfessionalUnfold()">生成专业展开图</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="output-section">
+            <div class="svg-container" id="svgContainer">
+                <p style="color: #6c757d; font-size: 18px;">请选择字母并点击"生成专业展开图"</p>
+            </div>
+            
+            <button class="print-btn" onclick="printUnfoldedLetter()" style="display: none;" id="printBtn">🖨️ 打印展开图</button>
+            
+            <div class="instructions">
+                <h3>📋 专业制作说明：</h3>
+                <ol>
+                    <li><strong>打印：</strong>使用A4或A3纸打印（建议160-200g卡纸）</li>
+                    <li><strong>裁剪：</strong>沿着<strong>实线</strong>裁剪整个展开图轮廓</li>
+                    <li><strong>折叠：</strong>沿着<strong>虚线</strong>向上折叠90度</li>
+                    <li><strong>组装：</strong>将侧面条带围绕字母轮廓，黄色标签涂胶水粘贴</li>
+                    <li><strong>完成：</strong>确保所有接缝牢固，等待胶水干燥</li>
+                </ol>
+                <p><strong>💡 专业提示：</strong>先干燥试装，确认无误后再涂胶水正式粘贴。</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedLetter = 'E';
+        let letterSize = 250;
+        let thickness = 30;
+
+        // 字母轮廓数据（简化的多边形点）
+        const letterOutlines = {
+            'A': [
+                [125, 50], [175, 200], [150, 200], [140, 170], [110, 170], [100, 200], [75, 200], [125, 50]
+            ],
+            'B': [
+                [75, 50], [75, 200], [140, 200], [155, 185], [155, 165], [140, 150], [150, 135], [150, 115], [140, 50], [75, 50]
+            ],
+            'C': [
+                [175, 70], [155, 50], [95, 50], [75, 70], [75, 180], [95, 200], [155, 200], [175, 180]
+            ],
+            'D': [
+                [75, 50], [75, 200], [140, 200], [175, 180], [175, 70], [140, 50], [75, 50]
+            ],
+            'E': [
+                [75, 50], [75, 200], [175, 200], [175, 175], [125, 175], [125, 135], [155, 135], [155, 115], [125, 115], [125, 75], [175, 75], [175, 50], [75, 50]
+            ],
+            'F': [
+                [75, 50], [75, 200], [100, 200], [100, 135], [155, 135], [155, 115], [100, 115], [100, 75], [175, 75], [175, 50], [75, 50]
+            ],
+            'G': [
+                [175, 70], [155, 50], [95, 50], [75, 70], [75, 180], [95, 200], [155, 200], [175, 180], [175, 135], [135, 135], [135, 155], [155, 155]
+            ],
+            'H': [
+                [75, 50], [75, 200], [100, 200], [100, 135], [150, 135], [150, 200], [175, 200], [175, 50], [150, 50], [150, 115], [100, 115], [100, 50], [75, 50]
+            ],
+            'I': [
+                [100, 50], [100, 75], [115, 75], [115, 175], [100, 175], [100, 200], [150, 200], [150, 175], [135, 175], [135, 75], [150, 75], [150, 50], [100, 50]
+            ],
+            'J': [
+                [150, 50], [150, 160], [135, 175], [115, 175], [100, 160], [100, 140], [85, 140], [85, 170], [105, 190], [145, 190], [165, 170], [165, 50], [150, 50]
+            ],
+            'K': [
+                [75, 50], [75, 200], [100, 200], [100, 135], [130, 105], [175, 50], [145, 50], [115, 85], [115, 115], [145, 145], [175, 200], [145, 200], [100, 145], [100, 50], [75, 50]
+            ],
+            'L': [
+                [75, 50], [75, 200], [175, 200], [175, 175], [100, 175], [100, 50], [75, 50]
+            ],
+            'M': [
+                [75, 50], [75, 200], [100, 200], [100, 85], [125, 110], [150, 85], [150, 200], [175, 200], [175, 50], [150, 50], [125, 75], [100, 50], [75, 50]
+            ],
+            'N': [
+                [75, 50], [75, 200], [100, 200], [100, 85], [150, 135], [150, 200], [175, 200], [175, 50], [150, 50], [150, 165], [100, 115], [100, 50], [75, 50]
+            ],
+            'O': [
+                [125, 50], [95, 50], [75, 70], [75, 180], [95, 200], [155, 200], [175, 180], [175, 70], [155, 50], [125, 50]
+            ],
+            'P': [
+                [75, 50], [75, 200], [100, 200], [100, 135], [140, 135], [155, 120], [155, 80], [140, 50], [75, 50]
+            ],
+            'Q': [
+                [125, 50], [95, 50], [75, 70], [75, 180], [95, 200], [155, 200], [175, 180], [175, 70], [155, 50], [125, 50], [140, 165], [165, 190], [175, 180]
+            ],
+            'R': [
+                [75, 50], [75, 200], [100, 200], [100, 135], [140, 135], [155, 120], [155, 80], [140, 50], [100, 50], [100, 115], [130, 115], [175, 200], [145, 200], [115, 135]
+            ],
+            'S': [
+                [175, 70], [155, 50], [95, 50], [75, 70], [75, 90], [95, 110], [155, 110], [175, 130], [175, 180], [155, 200], [95, 200], [75, 180]
+            ],
+            'T': [
+                [75, 50], [75, 75], [115, 75], [115, 200], [135, 200], [135, 75], [175, 75], [175, 50], [75, 50]
+            ],
+            'U': [
+                [75, 50], [75, 180], [95, 200], [155, 200], [175, 180], [175, 50], [150, 50], [150, 175], [100, 175], [100, 50], [75, 50]
+            ],
+            'V': [
+                [75, 50], [115, 200], [135, 200], [175, 50], [150, 50], [125, 175], [100, 50], [75, 50]
+            ],
+            'W': [
+                [75, 50], [95, 200], [115, 200], [125, 125], [135, 200], [155, 200], [175, 50], [150, 50], [140, 175], [125, 100], [110, 175], [100, 50], [75, 50]
+            ],
+            'X': [
+                [75, 50], [115, 90], [75, 200], [105, 200], [125, 125], [145, 200], [175, 200], [135, 160], [175, 50], [145, 50], [125, 125], [105, 50], [75, 50]
+            ],
+            'Y': [
+                [75, 50], [115, 90], [115, 200], [135, 200], [135, 90], [175, 50], [145, 50], [125, 75], [105, 50], [75, 50]
+            ],
+            'Z': [
+                [75, 50], [75, 75], [145, 175], [75, 175], [75, 200], [175, 200], [175, 175], [105, 75], [175, 75], [175, 50], [75, 50]
+            ]
+        };
+
+        // 初始化页面
+        function initializePage() {
+            createLetterSelector();
+            updateSliderValues();
+            generateProfessionalUnfold();
+        }
+
+        // 创建字母选择器
+        function createLetterSelector() {
+            const selector = document.getElementById('letterSelector');
+            const availableLetters = Object.keys(letterOutlines);
+
+            for (let i = 65; i <= 90; i++) {
+                const letter = String.fromCharCode(i);
+                const btn = document.createElement('button');
+                btn.className = 'letter-btn';
+                btn.textContent = letter;
+
+                if (availableLetters.includes(letter)) {
+                    btn.onclick = () => selectLetter(letter, btn);
+                    if (letter === 'E') btn.classList.add('active');
+                } else {
+                    btn.disabled = true;
+                    btn.style.opacity = '0.3';
+                    btn.title = '即将推出';
+                }
+
+                selector.appendChild(btn);
+            }
+        }
+
+        // 选择字母
+        function selectLetter(letter, btn) {
+            document.querySelectorAll('.letter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            selectedLetter = letter;
+        }
+
+        // 更新滑块值显示
+        function updateSliderValues() {
+            const sizeSlider = document.getElementById('sizeSlider');
+            const thicknessSlider = document.getElementById('thicknessSlider');
+            const sizeValue = document.getElementById('sizeValue');
+            const thicknessValue = document.getElementById('thicknessValue');
+
+            sizeSlider.oninput = function() {
+                letterSize = this.value;
+                sizeValue.textContent = this.value + 'px';
+            };
+
+            thicknessSlider.oninput = function() {
+                thickness = this.value;
+                thicknessValue.textContent = this.value + 'px';
+            };
+        }
+
+        // 生成专业展开图
+        function generateProfessionalUnfold() {
+            const container = document.getElementById('svgContainer');
+            const printBtn = document.getElementById('printBtn');
+
+            container.innerHTML = '';
+
+            if (!letterOutlines[selectedLetter]) {
+                container.innerHTML = '<p style="color: #dc3545;">该字母模板正在开发中...</p>';
+                return;
+            }
+
+            const svg = createProfessionalSVG();
+            container.appendChild(svg);
+            printBtn.style.display = 'inline-block';
+        }
+
+        // 创建专业SVG展开图
+        function createProfessionalSVG() {
+            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svg.setAttribute('width', '1000');
+            svg.setAttribute('height', '700');
+            svg.setAttribute('viewBox', '0 0 1000 700');
+
+            // 获取字母轮廓点
+            const outline = letterOutlines[selectedLetter];
+            const scale = letterSize / 250;
+            const scaledThickness = thickness * scale;
+
+            // 缩放轮廓点
+            const scaledOutline = outline.map(point => [
+                point[0] * scale,
+                point[1] * scale
+            ]);
+
+            // 计算中心位置
+            const centerX = 300;
+            const centerY = 200;
+
+            // 生成主展开图
+            generateMainUnfoldPattern(svg, scaledOutline, centerX, centerY, scaledThickness);
+
+            // 生成侧面条带
+            generateSideStrip(svg, scaledOutline, scaledThickness);
+
+            // 添加参考轮廓
+            generateReferenceOutline(svg, scaledOutline, centerX + 400, centerY);
+
+            // 添加说明文字
+            addInstructions(svg);
+
+            return svg;
+        }
+
+        // 生成主展开图案
+        function generateMainUnfoldPattern(svg, outline, centerX, centerY, thickness) {
+            const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            group.setAttribute('transform', `translate(${centerX}, ${centerY})`);
+
+            // 计算外框点（向外扩展thickness距离）
+            const outerOutline = expandOutline(outline, thickness);
+
+            // 绘制外框（裁剪线）
+            const outerPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            outerPath.setAttribute('d', createPathFromPoints(outerOutline));
+            outerPath.setAttribute('class', 'cut-line');
+            group.appendChild(outerPath);
+
+            // 绘制内框（字母轮廓 + 折叠线）
+            const innerPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            innerPath.setAttribute('d', createPathFromPoints(outline));
+            innerPath.setAttribute('class', 'fold-line');
+            group.appendChild(innerPath);
+
+            // 添加胶水标签
+            addGlueTabs(group, outerOutline, outline);
+
+            // 添加标签
+            const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            label.setAttribute('x', '0');
+            label.setAttribute('y', `${getOutlineBounds(outline).maxY + 40}`);
+            label.setAttribute('class', 'label-text');
+            label.textContent = `字母 ${selectedLetter} - 主体展开图`;
+            group.appendChild(label);
+
+            svg.appendChild(group);
+        }
+
+        // 扩展轮廓（向外）
+        function expandOutline(outline, distance) {
+            const expanded = [];
+            const len = outline.length;
+
+            for (let i = 0; i < len; i++) {
+                const prev = outline[(i - 1 + len) % len];
+                const curr = outline[i];
+                const next = outline[(i + 1) % len];
+
+                // 计算法向量
+                const normal = calculateOutwardNormal(prev, curr, next);
+
+                // 向外扩展
+                expanded.push([
+                    curr[0] + normal[0] * distance,
+                    curr[1] + normal[1] * distance
+                ]);
+            }
+
+            return expanded;
+        }
+
+        // 计算向外法向量
+        function calculateOutwardNormal(prev, curr, next) {
+            // 计算两个边的向量
+            const v1 = [curr[0] - prev[0], curr[1] - prev[1]];
+            const v2 = [next[0] - curr[0], next[1] - curr[1]];
+
+            // 计算平均法向量
+            const n1 = [-v1[1], v1[0]]; // 垂直向量
+            const n2 = [-v2[1], v2[0]];
+
+            let avgNormal = [(n1[0] + n2[0]) / 2, (n1[1] + n2[1]) / 2];
+
+            // 归一化
+            const length = Math.sqrt(avgNormal[0] * avgNormal[0] + avgNormal[1] * avgNormal[1]);
+            if (length > 0) {
+                avgNormal = [avgNormal[0] / length, avgNormal[1] / length];
+            }
+
+            return avgNormal;
+        }
+
+        // 从点数组创建SVG路径
+        function createPathFromPoints(points) {
+            if (points.length === 0) return '';
+
+            let path = `M ${points[0][0]} ${points[0][1]}`;
+            for (let i = 1; i < points.length; i++) {
+                path += ` L ${points[i][0]} ${points[i][1]}`;
+            }
+            path += ' Z';
+            return path;
+        }
+
+        // 添加胶水标签
+        function addGlueTabs(group, outerOutline, innerOutline) {
+            const tabSize = 15;
+
+            // 在外框和内框之间添加胶水标签
+            for (let i = 0; i < outerOutline.length; i += 2) {
+                const outer = outerOutline[i];
+                const inner = innerOutline[i];
+
+                // 计算标签位置（中点）
+                const tabX = (outer[0] + inner[0]) / 2;
+                const tabY = (outer[1] + inner[1]) / 2;
+
+                const tab = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                tab.setAttribute('cx', tabX);
+                tab.setAttribute('cy', tabY);
+                tab.setAttribute('r', tabSize / 2);
+                tab.setAttribute('class', 'glue-tab');
+                group.appendChild(tab);
+
+                // 添加"胶"字
+                const tabText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                tabText.setAttribute('x', tabX);
+                tabText.setAttribute('y', tabY + 3);
+                tabText.setAttribute('class', 'label-text');
+                tabText.setAttribute('style', 'font-size: 10px;');
+                tabText.textContent = '胶';
+                group.appendChild(tabText);
+            }
+        }
+
+        // 生成侧面条带
+        function generateSideStrip(svg, outline, thickness) {
+            const perimeter = calculatePerimeter(outline);
+            const stripWidth = perimeter;
+            const stripHeight = thickness;
+
+            const stripGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            stripGroup.setAttribute('transform', 'translate(100, 500)');
+
+            // 主条带
+            const mainStrip = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            mainStrip.setAttribute('x', '0');
+            mainStrip.setAttribute('y', '0');
+            mainStrip.setAttribute('width', stripWidth);
+            mainStrip.setAttribute('height', stripHeight);
+            mainStrip.setAttribute('class', 'cut-line');
+            mainStrip.setAttribute('fill', '#f8f9fa');
+            stripGroup.appendChild(mainStrip);
+
+            // 分段线（折叠线）
+            const segments = Math.ceil(stripWidth / 50); // 每50px一段
+            for (let i = 1; i < segments; i++) {
+                const x = (stripWidth / segments) * i;
+                const segmentLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                segmentLine.setAttribute('x1', x);
+                segmentLine.setAttribute('y1', '0');
+                segmentLine.setAttribute('x2', x);
+                segmentLine.setAttribute('y2', stripHeight);
+                segmentLine.setAttribute('class', 'fold-line');
+                stripGroup.appendChild(segmentLine);
+            }
+
+            // 胶水标签（上下两排）
+            const tabCount = Math.floor(segments / 2);
+            for (let i = 0; i < tabCount; i++) {
+                const x = (stripWidth / tabCount) * (i + 0.5);
+
+                // 上方标签
+                const topTab = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                topTab.setAttribute('x', x - 10);
+                topTab.setAttribute('y', -15);
+                topTab.setAttribute('width', '20');
+                topTab.setAttribute('height', '15');
+                topTab.setAttribute('class', 'glue-tab');
+                stripGroup.appendChild(topTab);
+
+                // 下方标签
+                const bottomTab = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                bottomTab.setAttribute('x', x - 10);
+                bottomTab.setAttribute('y', stripHeight);
+                bottomTab.setAttribute('width', '20');
+                bottomTab.setAttribute('height', '15');
+                bottomTab.setAttribute('class', 'glue-tab');
+                stripGroup.appendChild(bottomTab);
+            }
+
+            // 标签
+            const stripLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            stripLabel.setAttribute('x', stripWidth / 2);
+            stripLabel.setAttribute('y', stripHeight + 40);
+            stripLabel.setAttribute('class', 'label-text');
+            stripLabel.textContent = `侧面条带 - 长度: ${Math.round(stripWidth)}px`;
+            stripGroup.appendChild(stripLabel);
+
+            svg.appendChild(stripGroup);
+        }
+
+        // 计算轮廓周长
+        function calculatePerimeter(outline) {
+            let perimeter = 0;
+            for (let i = 0; i < outline.length; i++) {
+                const curr = outline[i];
+                const next = outline[(i + 1) % outline.length];
+                const dx = next[0] - curr[0];
+                const dy = next[1] - curr[1];
+                perimeter += Math.sqrt(dx * dx + dy * dy);
+            }
+            return perimeter;
+        }
+
+        // 生成参考轮廓
+        function generateReferenceOutline(svg, outline, centerX, centerY) {
+            const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            group.setAttribute('transform', `translate(${centerX}, ${centerY})`);
+
+            const refPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            refPath.setAttribute('d', createPathFromPoints(outline));
+            refPath.setAttribute('class', 'reference-outline');
+            refPath.setAttribute('fill', '#f0f0f0');
+            group.appendChild(refPath);
+
+            const refLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            refLabel.setAttribute('x', '0');
+            refLabel.setAttribute('y', `${getOutlineBounds(outline).maxY + 30}`);
+            refLabel.setAttribute('class', 'label-text');
+            refLabel.textContent = `参考轮廓 - ${selectedLetter}`;
+            group.appendChild(refLabel);
+
+            svg.appendChild(group);
+        }
+
+        // 获取轮廓边界
+        function getOutlineBounds(outline) {
+            const xs = outline.map(p => p[0]);
+            const ys = outline.map(p => p[1]);
+            return {
+                minX: Math.min(...xs),
+                maxX: Math.max(...xs),
+                minY: Math.min(...ys),
+                maxY: Math.max(...ys)
+            };
+        }
+
+        // 添加说明文字
+        function addInstructions(svg) {
+            const instructions = [
+                '制作说明：',
+                '1. 沿实线裁剪',
+                '2. 沿虚线折叠',
+                '3. 黄色区域涂胶水',
+                '4. 按顺序粘贴组装'
+            ];
+
+            instructions.forEach((text, index) => {
+                const instruction = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                instruction.setAttribute('x', '50');
+                instruction.setAttribute('y', `${50 + index * 20}`);
+                instruction.setAttribute('class', 'label-text');
+                instruction.setAttribute('style', 'font-size: 14px; fill: #666;');
+                instruction.textContent = text;
+                svg.appendChild(instruction);
+            });
+        }
+
+        // 打印功能
+        function printUnfoldedLetter() {
+            window.print();
+        }
+
+        // 页面加载完成后初始化
+        window.onload = initializePage;
+    </script>
+</body>
+</html>

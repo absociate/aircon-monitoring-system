@@ -1,0 +1,211 @@
+# 智能充電電池管理系統 - Home Assistant 輔助實體配置
+# 將此內容添加到您的 configuration.yaml 或單獨的 helpers.yaml 文件中
+
+# 輸入日期時間 - 記錄上次充電時間
+input_datetime:
+  # 牧田電池上次充電時間
+  makita_last_charge:
+    name: "牧田電池上次充電時間"
+    has_date: true
+    has_time: true
+    icon: mdi:battery-charging
+    
+  # ENELOOP 3號電池上次充電時間
+  eneloop_aa_last_charge:
+    name: "ENELOOP 3號電池上次充電時間"
+    has_date: true
+    has_time: true
+    icon: mdi:battery-charging
+    
+  # ENELOOP 4號電池上次充電時間
+  eneloop_aaa_last_charge:
+    name: "ENELOOP 4號電池上次充電時間"
+    has_date: true
+    has_time: true
+    icon: mdi:battery-charging
+
+# 輸入布林值 - 系統開關控制
+input_boolean:
+  # 電池管理系統總開關
+  battery_management_enabled:
+    name: "電池管理系統"
+    icon: mdi:battery-sync
+    
+  # 自動維護充電開關
+  battery_auto_maintenance:
+    name: "自動維護充電"
+    icon: mdi:battery-sync-outline
+    
+  # 充電通知開關
+  battery_charging_notifications:
+    name: "充電通知"
+    icon: mdi:bell-ring
+    
+  # 牧田電池個別控制
+  makita_charging_enabled:
+    name: "牧田電池充電管理"
+    icon: mdi:battery
+    
+  # ENELOOP 3號電池個別控制
+  eneloop_aa_charging_enabled:
+    name: "ENELOOP 3號電池充電管理"
+    icon: mdi:battery
+    
+  # ENELOOP 4號電池個別控制
+  eneloop_aaa_charging_enabled:
+    name: "ENELOOP 4號電池充電管理"
+    icon: mdi:battery
+
+# 輸入數字 - 充電時間設定
+input_number:
+  # 牧田電池充電時間 (分鐘)
+  makita_charging_time:
+    name: "牧田電池充電時間"
+    min: 30
+    max: 180
+    step: 15
+    initial: 90
+    unit_of_measurement: "分鐘"
+    icon: mdi:timer
+    
+  # ENELOOP 3號電池充電時間 (分鐘)
+  eneloop_aa_charging_time:
+    name: "ENELOOP 3號電池充電時間"
+    min: 60
+    max: 360
+    step: 15
+    initial: 240
+    unit_of_measurement: "分鐘"
+    icon: mdi:timer
+    
+  # ENELOOP 4號電池充電時間 (分鐘)
+  eneloop_aaa_charging_time:
+    name: "ENELOOP 4號電池充電時間"
+    min: 60
+    max: 300
+    step: 15
+    initial: 210
+    unit_of_measurement: "分鐘"
+    icon: mdi:timer
+    
+  # 維護充電週期 (天)
+  makita_maintenance_cycle:
+    name: "牧田電池維護週期"
+    min: 7
+    max: 90
+    step: 1
+    initial: 30
+    unit_of_measurement: "天"
+    icon: mdi:calendar-sync
+    
+  eneloop_maintenance_cycle:
+    name: "ENELOOP電池維護週期"
+    min: 14
+    max: 120
+    step: 1
+    initial: 60
+    unit_of_measurement: "天"
+    icon: mdi:calendar-sync
+
+# 輸入選擇 - 充電模式
+input_select:
+  # 充電模式選擇
+  battery_charging_mode:
+    name: "充電模式"
+    options:
+      - "手動模式"
+      - "自動模式"
+      - "維護模式"
+      - "停用"
+    initial: "自動模式"
+    icon: mdi:battery-sync
+
+# 輸入文字 - 系統狀態顯示
+input_text:
+  # 系統狀態
+  battery_system_status:
+    name: "電池系統狀態"
+    max: 255
+    initial: "系統就緒"
+    icon: mdi:information
+    
+  # 最後操作記錄
+  battery_last_operation:
+    name: "最後操作"
+    max: 255
+    initial: "無"
+    icon: mdi:history
+
+# 感測器 - 計算距離上次充電天數
+sensor:
+  - platform: template
+    sensors:
+      # 牧田電池距離上次充電天數
+      makita_days_since_charge:
+        friendly_name: "牧田電池距離上次充電天數"
+        unit_of_measurement: "天"
+        icon_template: mdi:calendar-clock
+        value_template: >
+          {% set last_charge = states('input_datetime.makita_last_charge') %}
+          {% if last_charge != 'unknown' and last_charge != 'unavailable' %}
+            {% set last_charge_date = strptime(last_charge, '%Y-%m-%d %H:%M:%S') %}
+            {% set now = now() %}
+            {{ (now - last_charge_date).days }}
+          {% else %}
+            999
+          {% endif %}
+      
+      # ENELOOP 3號電池距離上次充電天數
+      eneloop_aa_days_since_charge:
+        friendly_name: "ENELOOP 3號電池距離上次充電天數"
+        unit_of_measurement: "天"
+        icon_template: mdi:calendar-clock
+        value_template: >
+          {% set last_charge = states('input_datetime.eneloop_aa_last_charge') %}
+          {% if last_charge != 'unknown' and last_charge != 'unavailable' %}
+            {% set last_charge_date = strptime(last_charge, '%Y-%m-%d %H:%M:%S') %}
+            {% set now = now() %}
+            {{ (now - last_charge_date).days }}
+          {% else %}
+            999
+          {% endif %}
+      
+      # ENELOOP 4號電池距離上次充電天數
+      eneloop_aaa_days_since_charge:
+        friendly_name: "ENELOOP 4號電池距離上次充電天數"
+        unit_of_measurement: "天"
+        icon_template: mdi:calendar-clock
+        value_template: >
+          {% set last_charge = states('input_datetime.eneloop_aaa_last_charge') %}
+          {% if last_charge != 'unknown' and last_charge != 'unavailable' %}
+            {% set last_charge_date = strptime(last_charge, '%Y-%m-%d %H:%M:%S') %}
+            {% set now = now() %}
+            {{ (now - last_charge_date).days }}
+          {% else %}
+            999
+          {% endif %}
+
+# 自動化範例 (可選)
+automation:
+  # 每日檢查維護充電需求
+  - alias: "電池維護檢查"
+    description: "每日早上8點檢查是否需要維護充電"
+    trigger:
+      - platform: time
+        at: "08:00:00"
+    condition:
+      - condition: state
+        entity_id: input_boolean.battery_management_enabled
+        state: 'on'
+      - condition: state
+        entity_id: input_boolean.battery_auto_maintenance
+        state: 'on'
+    action:
+      - service: notify.notify
+        data:
+          title: "🔋 電池維護檢查"
+          message: >
+            系統正在檢查電池維護需求...
+            牧田電池：{{ states('sensor.makita_days_since_charge') }}天
+            ENELOOP 3號：{{ states('sensor.eneloop_aa_days_since_charge') }}天
+            ENELOOP 4號：{{ states('sensor.eneloop_aaa_days_since_charge') }}天

@@ -1,0 +1,112 @@
+{
+  "devices": {
+    "humidifier.rdi_640hhchu_shi_ji": {
+      "friendlyName": "加濕器",
+      "location": "客廳",
+      "type": "humidifier",
+      "description": "RDI 640H 加濕器",
+      "notificationEnabled": true,
+      "states": {
+        "on": "開啟",
+        "off": "關閉",
+        "unavailable": "無法連接",
+        "unknown": "未知狀態"
+      }
+    },
+    "fan.kpi_253hwquan_re_jiao_huan_qi_air_speed": {
+      "friendlyName": "全熱交換器",
+      "location": "全屋",
+      "type": "fan",
+      "description": "KPI 253H 全熱交換器風扇",
+      "notificationEnabled": true,
+      "states": {
+        "on": "開啟",
+        "off": "關閉",
+        "low": "低速",
+        "medium": "中速",
+        "high": "高速",
+        "unavailable": "無法連接",
+        "unknown": "未知狀態"
+      }
+    },
+    "climate.ke_ting_leng_qi": {
+      "friendlyName": "客廳冷氣",
+      "location": "客廳",
+      "type": "climate",
+      "description": "客廳空調系統",
+      "notificationEnabled": true,
+      "states": {
+        "off": "關閉",
+        "heat": "加熱模式",
+        "cool": "冷卻模式",
+        "auto": "自動模式",
+        "dry": "除濕模式",
+        "fan_only": "送風模式",
+        "unavailable": "無法連接",
+        "unknown": "未知狀態"
+      }
+    },
+    "climate.zhu_wo_leng_qi": {
+      "friendlyName": "主臥冷氣",
+      "location": "主臥室",
+      "type": "climate",
+      "description": "主臥室空調系統",
+      "notificationEnabled": true,
+      "states": {
+        "off": "關閉",
+        "heat": "加熱模式",
+        "cool": "冷卻模式",
+        "auto": "自動模式",
+        "dry": "除濕模式",
+        "fan_only": "送風模式",
+        "unavailable": "無法連接",
+        "unknown": "未知狀態"
+      }
+    },
+    "climate.ci_wo_leng_qi": {
+      "friendlyName": "次臥冷氣",
+      "location": "次臥室",
+      "type": "climate",
+      "description": "次臥室空調系統",
+      "notificationEnabled": true,
+      "states": {
+        "off": "關閉",
+        "heat": "加熱模式",
+        "cool": "冷卻模式",
+        "auto": "自動模式",
+        "dry": "除濕模式",
+        "fan_only": "送風模式",
+        "unavailable": "無法連接",
+        "unknown": "未知狀態"
+      }
+    }
+  },
+  "notifications": {
+    "notifyHelper": {
+      "enabled": true,
+      "service": "notify.notify",
+      "priority": "normal",
+      "sound": "default"
+    },
+    "synologyChat": {
+      "enabled": true,
+      "webhookUrl": "YOUR_SYNOLOGY_CHAT_WEBHOOK_URL",
+      "username": "Home Assistant",
+      "channel": "#smart-home"
+    },
+    "telegram": {
+      "enabled": true,
+      "botToken": "YOUR_TELEGRAM_BOT_TOKEN",
+      "chatId": "YOUR_TELEGRAM_CHAT_ID",
+      "parseMode": "HTML",
+      "disableNotification": false
+    }
+  },
+  "settings": {
+    "timezone": "Asia/Taipei",
+    "language": "zh-TW",
+    "preventDuplicateNotifications": true,
+    "notificationCooldown": 60,
+    "logLevel": "info"
+  }
+}
