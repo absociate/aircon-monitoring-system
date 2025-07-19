@@ -1,0 +1,97 @@
+[
+    {
+        "id": "test_tab",
+        "type": "tab",
+        "label": "NotifyHelper測試專用",
+        "disabled": false,
+        "info": "專門測試NotifyHelper通知功能",
+        "env": []
+    },
+    {
+        "id": "test_notify_inject",
+        "type": "inject",
+        "z": "test_tab",
+        "name": "🧪 測試NotifyHelper",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "test_notify",
+        "payloadType": "str",
+        "x": 130,
+        "y": 80,
+        "wires": [["test_notify_function"]]
+    },
+    {
+        "id": "test_notify_function",
+        "type": "function",
+        "z": "test_tab",
+        "name": "準備測試通知",
+        "func": "// 準備NotifyHelper測試通知\nmsg.payload_notifyhelper = {\n    message: `🧪 NotifyHelper測試通知\\n\\n這是一個測試訊息，用於驗證NotifyHelper是否正常工作。\\n\\n✅ 如果您收到這個通知，表示NotifyHelper配置正確。\\n\\n⏰ 測試時間：${new Date().toLocaleString('zh-TW')}`,\n    title: '🧪 NotifyHelper測試',\n    targets: ['person.ming']\n};\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 350,
+        "y": 80,
+        "wires": [["test_notify_helper"]]
+    },
+    {
+        "id": "test_notify_helper",
+        "type": "api-call-service",
+        "z": "test_tab",
+        "name": "NotifyHelper (ming)",
+        "server": "125d83f7.1a33dc",
+        "version": 7,
+        "debugenabled": false,
+        "action": "notify.notify_person",
+        "floorId": [],
+        "areaId": [],
+        "deviceId": [],
+        "entityId": [],
+        "labelId": [],
+        "data": "{\"message\": payload_notifyhelper.message, \"title\": payload_notifyhelper.title, \"targets\": payload_notifyhelper.targets}",
+        "dataType": "jsonata",
+        "mergeContext": "",
+        "mustacheAltTags": false,
+        "outputProperties": [],
+        "queue": "none",
+        "blockInputOverrides": true,
+        "domain": "notify",
+        "service": "notify_person",
+        "x": 580,
+        "y": 80,
+        "wires": [["test_debug"]]
+    },
+    {
+        "id": "test_debug",
+        "type": "debug",
+        "z": "test_tab",
+        "name": "NotifyHelper測試Debug",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 820,
+        "y": 80,
+        "wires": []
+    },
+    {
+        "id": "125d83f7.1a33dc",
+        "type": "server",
+        "name": "Home Assistant",
+        "addon": true
+    }
+]

@@ -1,0 +1,67 @@
+{
+  "environments": {
+    "home": {
+      "description": "家裡開發環境",
+      "network": "home-wifi",
+      "development": true,
+      "testing": true,
+      "deployment": false,
+      "notes": "用於開發和測試辦公室功能"
+    },
+    "office": {
+      "description": "辦公室生產環境", 
+      "network": "office-lan",
+      "development": false,
+      "testing": true,
+      "deployment": true,
+      "notes": "實際部署和運行環境"
+    }
+  },
+  
+  "sync_strategy": {
+    "home_to_github": {
+      "enabled": true,
+      "branch": "main",
+      "auto_push": true,
+      "commit_prefix": "[HOME-DEV]"
+    },
+    "office_deployment": {
+      "enabled": true,
+      "branch": "main", 
+      "auto_pull": true,
+      "backup_before_deploy": true
+    }
+  },
+  
+  "file_handling": {
+    "config_files": {
+      "home": "config.home.json",
+      "office": "config.office.json"
+    },
+    "sensitive_files": [
+      "secrets.json",
+      "api-keys.json", 
+      "network-config.json"
+    ],
+    "shared_files": [
+      "automation-logic.json",
+      "device-mappings.json",
+      "notification-templates.json"
+    ]
+  },
+  
+  "deployment_checklist": {
+    "before_office_deployment": [
+      "檢查網路設定是否符合辦公室環境",
+      "確認 API 金鑰和權杖正確",
+      "測試設備連線",
+      "備份現有配置"
+    ],
+    "after_deployment": [
+      "驗證所有功能正常運作",
+      "檢查通知系統",
+      "確認安全設定",
+      "更新文檔"
+    ]
+  }
+}

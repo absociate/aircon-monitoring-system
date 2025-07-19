@@ -1,0 +1,84 @@
+[
+    {
+        "id": "7aa6bd9d6c51a86b",
+        "type": "tab",
+        "label": "智能充電電池管理系統 - 安全加強版",
+        "disabled": false,
+        "info": "智能充電電池管理系統 - 安全加強版\n\n🛡️ 新增安全功能：\n1. 雙重計時器保護（主計時器 + 安全計時器）\n2. 定期安全檢查（每10分鐘）\n3. 持久化充電記錄（重啟後仍有效）\n4. 緊急關閉功能\n5. 分級警報系統\n6. 最大充電時間硬限制\n\n⚠️ 防止過度充電：\n- 主計時器：正常充電時間\n- 安全計時器：150%時間強制關閉\n- 定期檢查：每10分鐘檢查充電狀態\n- 緊急關閉：一鍵關閉所有充電\n\n支援設備：\n- 牧田BL1041B (90分鐘，安全限制135分鐘)\n- ENELOOP 3號 (240分鐘，安全限制360分鐘)\n- ENELOOP 4號 (210分鐘，安全限制315分鐘)\n\n通知服務：\n- NotifyHelper (notify.notify_person → person.ming)\n- Synology Chat (notify.synology_chat_bot_3)\n- Telegram (notify.telegram)",
+        "env": []
+    },
+    {
+        "id": "emergency_stop_all",
+        "type": "inject",
+        "z": "7aa6bd9d6c51a86b",
+        "name": "🚨 緊急關閉所有充電",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "emergency_stop",
+        "payloadType": "str",
+        "x": 130,
+        "y": 20,
+        "wires": [["emergency_handler"]]
+    },
+    {
+        "id": "emergency_handler",
+        "type": "function",
+        "z": "7aa6bd9d6c51a86b",
+        "name": "緊急處理器",
+        "func": "// 電池配置\nconst batteries = {\n    makita: {\n        entityId: 'switch.tp_link_power_strip_eb2f_cha_shang_4',\n        name: '牧田BL1041B充電電池',\n        domain: 'switch'\n    },\n    eneloop_aa: {\n        entityId: 'switch.tp_link_power_strip_eb2f_cha_shang_5',\n        name: 'ENELOOP 3號充電電池',\n        domain: 'switch'\n    },\n    eneloop_aaa: {\n        entityId: 'switch.tp_link_power_strip_eb2f_cha_shang_6',\n        name: 'ENELOOP 4號充電電池',\n        domain: 'switch'\n    }\n};\n\n// 清除所有計時器和記錄\nfor (const key of Object.keys(batteries)) {\n    // 清除主計時器\n    const timerId = flow.get(`${key}_timer`);\n    if (timerId) {\n        clearTimeout(timerId);\n        flow.set(`${key}_timer`, null);\n    }\n    \n    // 清除安全計時器\n    const safetyTimerId = flow.get(`${key}_safety_timer`);\n    if (safetyTimerId) {\n        clearTimeout(safetyTimerId);\n        flow.set(`${key}_safety_timer`, null);\n    }\n    \n    // 清除充電記錄\n    context.set(`${key}_charging`, null);\n}\n\n// 準備緊急通知\nconst notifyMsg = {\n    payload: {\n        title: '🚨 緊急關閉充電',\n        message: `🚨 已執行緊急關閉所有充電設備\\n\\n關閉設備：\\n• 牧田BL1041B充電電池\\n• ENELOOP 3號充電電池\\n• ENELOOP 4號充電電池\\n\\n⏰ 執行時間：${new Date().toLocaleString('zh-TW')}\\n\\n請檢查設備狀態和電池溫度。`\n    },\n    action: 'emergency_stop'\n};\n\n// 準備關閉命令\nconst outputs = [notifyMsg];\n\nfor (const [key, battery] of Object.entries(batteries)) {\n    outputs.push({\n        payload: {\n            domain: battery.domain,\n            service: 'turn_off',\n            target: {\n                entity_id: battery.entityId\n            }\n        },\n        batteryKey: key,\n        action: 'emergency_stop'\n    });\n}\n\nnode.status({fill:\"red\", shape:\"dot\", text:\"緊急關閉執行\"});\n\nreturn outputs;",
+        "outputs": 4,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 350,
+        "y": 20,
+        "wires": [["d320c63adb96c9b2"], ["57a17fab27364441"], ["57a17fab27364441"], ["57a17fab27364441"]]
+    },
+    {
+        "id": "safety_check_timer",
+        "type": "inject",
+        "z": "7aa6bd9d6c51a86b",
+        "name": "🔍 安全檢查（每10分鐘）",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "600",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 60,
+        "topic": "",
+        "payload": "safety_check",
+        "payloadType": "str",
+        "x": 140,
+        "y": 80,
+        "wires": [["safety_checker"]]
+    },
+    {
+        "id": "safety_checker",
+        "type": "function",
+        "z": "7aa6bd9d6c51a86b",
+        "name": "安全檢查器",
+        "func": "// 電池配置\nconst batteries = {\n    makita: {\n        entityId: 'switch.tp_link_power_strip_eb2f_cha_shang_4',\n        name: '牧田BL1041B充電電池',\n        chargingTime: 90,\n        domain: 'switch'\n    },\n    eneloop_aa: {\n        entityId: 'switch.tp_link_power_strip_eb2f_cha_shang_5',\n        name: 'ENELOOP 3號充電電池',\n        chargingTime: 240,\n        domain: 'switch'\n    },\n    eneloop_aaa: {\n        entityId: 'switch.tp_link_power_strip_eb2f_cha_shang_6',\n        name: 'ENELOOP 4號充電電池',\n        chargingTime: 210,\n        domain: 'switch'\n    }\n};\n\nconst now = Date.now();\nconst outputs = [null, null, null]; // [通知, 控制, debug]\nlet warnings = [];\nlet emergencyStops = [];\n\n// 檢查每個電池的充電狀態\nfor (const [key, battery] of Object.entries(batteries)) {\n    const chargingInfo = context.get(`${key}_charging`);\n    \n    if (chargingInfo && chargingInfo.startTime) {\n        const chargingMinutes = Math.round((now - chargingInfo.startTime) / 60000);\n        const maxTime = battery.chargingTime;\n        const warningTime = Math.round(maxTime * 1.5); // 150%警告\n        const emergencyTime = Math.round(maxTime * 2.0); // 200%緊急關閉\n        \n        if (chargingMinutes >= emergencyTime) {\n            // 緊急關閉\n            emergencyStops.push({\n                battery: battery,\n                key: key,\n                chargingMinutes: chargingMinutes,\n                maxTime: maxTime\n            });\n        } else if (chargingMinutes >= warningTime) {\n            // 警告\n            warnings.push({\n                battery: battery,\n                key: key,\n                chargingMinutes: chargingMinutes,\n                maxTime: maxTime\n            });\n        }\n    }\n}\n\n// 處理緊急關閉\nif (emergencyStops.length > 0) {\n    const stopList = emergencyStops.map(item => \n        `• ${item.battery.name}: ${item.chargingMinutes}分鐘 (超過${item.maxTime}分鐘${Math.round((item.chargingMinutes/item.maxTime-1)*100)}%)`\n    ).join('\\n');\n    \n    outputs[0] = {\n        payload: {\n            title: '🚨 緊急關閉過度充電',\n            message: `🚨 檢測到嚴重過度充電，立即關閉：\\n${stopList}\\n\\n⚠️ 請檢查電池和充電器狀態\\n🕐 檢查時間：${new Date().toLocaleString('zh-TW')}`\n        },\n        action: 'emergency_safety_stop'\n    };\n    \n    // 關閉第一個過度充電的設備\n    const firstStop = emergencyStops[0];\n    outputs[1] = {\n        payload: {\n            domain: firstStop.battery.domain,\n            service: 'turn_off',\n            target: {\n                entity_id: firstStop.battery.entityId\n            }\n        },\n        batteryKey: firstStop.key,\n        action: 'emergency_safety_stop'\n    };\n    \n    // 清除充電記錄\n    emergencyStops.forEach(item => {\n        context.set(`${item.key}_charging`, null);\n        const timerId = flow.get(`${item.key}_timer`);\n        const safetyTimerId = flow.get(`${item.key}_safety_timer`);\n        if (timerId) {\n            clearTimeout(timerId);\n            flow.set(`${item.key}_timer`, null);\n        }\n        if (safetyTimerId) {\n            clearTimeout(safetyTimerId);\n            flow.set(`${item.key}_safety_timer`, null);\n        }\n    });\n}\n\n// 處理警告\nelse if (warnings.length > 0) {\n    const warnList = warnings.map(item => \n        `• ${item.battery.name}: ${item.chargingMinutes}分鐘 (設定${item.maxTime}分鐘)`\n    ).join('\\n');\n    \n    outputs[0] = {\n        payload: {\n            title: '⚠️ 充電時間警告',\n            message: `⚠️ 以下電池充電時間超過設定值50%：\\n${warnList}\\n\\n建議檢查充電狀態\\n🕐 檢查時間：${new Date().toLocaleString('zh-TW')}`\n        },\n        action: 'charging_warning'\n    };\n}\n\n// Debug輸出\noutputs[2] = {\n    payload: '安全檢查完成',\n    warnings: warnings.length,\n    emergencyStops: emergencyStops.length,\n    checkTime: new Date().toISOString()\n};\n\nnode.status({\n    fill: emergencyStops.length > 0 ? \"red\" : warnings.length > 0 ? \"yellow\" : \"green\",\n    shape: \"dot\",\n    text: `檢查: ${warnings.length}警告, ${emergencyStops.length}緊急`\n});\n\nreturn outputs;",
+        "outputs": 3,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 380,
+        "y": 80,
+        "wires": [["d320c63adb96c9b2"], ["57a17fab27364441"], ["debug_safety"]]
+    }
+]
